@@ -1,0 +1,8 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* optional: override transitions */
+html {
+  scroll-behavior: smooth;
+}

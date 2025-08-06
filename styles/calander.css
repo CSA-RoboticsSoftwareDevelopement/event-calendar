@@ -1,0 +1,91 @@
+/* ==== Base Light Theme ==== */
+.rbc-calendar {
+  background-color: white;
+  color: black;
+}
+
+.rbc-toolbar {
+  background-color: #f9fafb; /* light gray */
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+
+.rbc-event {
+  background-color: #4f46e5 !important; /* indigo-600 */
+  color: white;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+/* ==== Month View ==== */
+.rbc-month-view .rbc-event {
+  display: none !important;
+}
+
+.rbc-month-row .rbc-row-content .rbc-event:first-child {
+  display: block !important;
+}
+
+.rbc-show-more {
+  color: #6366f1; /* indigo-500 */
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+/* Center date numbers */
+.rbc-date-cell {
+  text-align: center;
+  padding: 0.25rem;
+  font-weight: 500;
+}
+
+/* Hide scroll in month view */
+.rbc-month-row {
+  overflow: hidden !important;
+}
+
+/* Prevent extra spacing in month grid */
+.rbc-row-content {
+  overflow-y: hidden !important;
+}
+
+/* ==== Dark Mode ==== */
+.dark .rbc-calendar {
+  background-color: #18181b; /* zinc-900 */
+  color: white;
+}
+
+.dark .rbc-toolbar {
+  background-color: #27272a; /* zinc-800 */
+  color: white;
+}
+
+.dark .rbc-event {
+  background-color: #6366f1 !important; /* indigo-500 */
+  color: white;
+}
+
+.dark .rbc-show-more {
+  color: #a5b4fc; /* indigo-300 */
+}
+
+.dark .rbc-time-view,
+.dark .rbc-time-header,
+.dark .rbc-time-content {
+  background-color: #27272a;
+  color: white;
+}
+
+/* ==== Responsiveness ==== */
+@media (max-width: 768px) {
+  .rbc-month-view {
+    height: auto !important;
+  }
+}
