@@ -26,6 +26,7 @@ export default function HomePage() {
   const [availableUsers, setAvailableUsers] = useState<UserAvailability[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+ // const [showUserModal, setshowUserModal] = useState(false);
   const [title, setTitle] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -35,10 +36,9 @@ export default function HomePage() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newUserName, setNewUserName] = useState('');
-const [currentUserPage, setCurrentUserPage] = useState(0);
-const usersPerPage = 10;
-
-
+const [name, setName] = useState('');
+const [email, setEmail] = useState('');
+const [phoneNumber, setPhoneNumber] = useState('');
   useEffect(() => {
     fetch('/api/events')
       .then(res => res.json())
@@ -56,6 +56,62 @@ const usersPerPage = 10;
       .then(res => res.json())
       .then((data: UserAvailability[]) => setAvailableUsers(data));
   }, [start, end]);
+
+
+
+  //create user 
+
+// const handleCreateUser = async () => {
+//  // const name = prompt("Enter user name");
+ 
+
+//   const res = await fetch("/api/users", {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ name }),
+//   });
+
+//   const newUser = await res.json();
+//   setUsers((prev) => [...prev, newUser]);
+// };
+
+// const handleCreateUser = async () => {
+//   if (!name || !email) {
+//     alert("Name and Email are required.");
+//     return;
+//   }
+
+//   const payload = { name, email };
+//   if (phoneNumber.trim() !== "") {
+//     payload.phoneNumber = phoneNumber;
+//   }
+
+//   try {
+//     const res = await fetch("/api/users", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(payload),
+//     });
+
+//     if (!res.ok) throw new Error("Failed to create user");
+
+//     const newUser = await res.json();
+//     setUsers((prev) => [...prev, newUser]);
+
+//     // Reset the form
+//     setName("");
+//     setEmail("");
+//     setPhoneNumber("");
+
+//     // Close the modal (if you are using one)
+//   //  setshowUserModal(false); // make sure this is defined, likely from `useDisclosure`
+//   } catch (err) {
+//     console.error("Error creating user:", err);
+//     alert("Something went wrong while creating user.");
+//   }
+// };
+
+
 
   const handleSubmit = async () => {
     const res = await fetch('/api/events', {
@@ -133,58 +189,26 @@ if (!proceed) return;
 </button>
 
 
-<div className="flex items-center gap-2 overflow-x-auto">
-  {/* Left Arrow */}
-  <button
-    disabled={currentUserPage === 0}
-    onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
-    className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
-  >
-    &lt;
-  </button>
-
-  {/* User Buttons */}
-  <div className="flex gap-2 flex-wrap">
-    {users
-      .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
-      .map(user => {
-        const availability = getAvailabilityStatus(user.id);
-        return (
-          <button
-            key={user.id}
-            onClick={() => setSelectedUserId(user.id)}
-            className={`px-4 py-2 rounded flex flex-col items-start ${
-              selectedUserId === user.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
-            }`}
-          >
-            <span>{user.name}</span>
-            {/* Optional: show availability below name */}
-            {/* {availability && (
-              <span className="text-xs text-gray-800 dark:text-gray-300">
-                {availability}
-              </span>
-            )} */}
-          </button>
-        );
-      })}
-  </div>
-
-  {/* Right Arrow */}
-  <button
-    disabled={(currentUserPage + 1) * usersPerPage >= users.length}
-    onClick={() =>
-      setCurrentUserPage(prev =>
-        (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
-      )
-    }
-    className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
-  >
-    &gt;
-  </button>
-</div>
-
+          {users.map(user => {
+            const availability = getAvailabilityStatus(user.id);
+            return (
+              <button
+                key={user.id}
+                onClick={() => setSelectedUserId(user.id)}
+                className={`px-4 py-2 rounded flex flex-col items-start ${selectedUserId === user.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
+                  }`}
+              >
+                <span>{user.name}</span>
+                {/* {availability && (
+                  <span className="text-xs text-gray-800 dark:text-gray-300">
+                    {availability}
+                  </span>
+                )} */}
+              </button>
+            );
+          })}
         </div>
 
         <button
@@ -352,6 +376,62 @@ if (!proceed) return;
           </div>
         </div>
       )}
+
+
+
+ {/* Create Modal  for adding user */} 
+{/* {showUserModal && (
+  <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+    <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-full max-w-md text-black dark:text-white dark:border dark:border-zinc-700">
+      <h2 className="text-lg font-semibold mb-4">Add New User</h2>
+
+      <input
+        type="text"
+        placeholder="Name"
+        className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
+      <input
+        type="tel"
+        placeholder="Contact Number (optional)"
+        className="w-full mb-4 p-2 rounded border dark:bg-zinc-700"
+        value={phoneNumber}
+        onChange={e => setPhoneNumber(e.target.value)}
+      />
+
+      <div className="flex justify-end space-x-2">
+<button
+  onClick={() => {
+    setshowUserModal(false);
+    setName("");
+    setEmail("");
+    setPhoneNumber("");
+  }}
+  className="px-4 py-2 bg-gray-400 text-white rounded"
+>
+  Cancel
+</button>
+
+        <button
+          onClick={handleCreateUser}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+)} */}
+
+
 
       {/* Event Details Modal */}
       {selectedEvent && (
