@@ -76,13 +76,29 @@ export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
       </div>
 
       <div className="flex items-center gap-2 ml-4">
-        <Pencil className="w-4 h-4 text-blue-600 cursor-pointer" onClick={() => setShowEditModal(true)} title="Modify" />
-        <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" onClick={() => setShowDeleteModal(true)} title="Delete" />
+<Pencil
+  className="w-4 h-4 text-blue-600 cursor-pointer"
+  onClick={(e) => {
+    e.stopPropagation(); // prevent opening the event details modal 
+    setShowEditModal(true);
+  }}
+  title="Modify"
+/>
+
+<Trash2
+  className="w-4 h-4 text-red-600 cursor-pointer"
+  onClick={(e) => {
+    e.stopPropagation(); // prevent opening the event details modal 
+    setShowDeleteModal(true);
+  }}
+  title="Delete"
+/>
+
       </div>
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <Dialog.Panel className="bg-white rounded p-6 w-96">
             <Dialog.Title className="text-lg font-semibold">Delete Event</Dialog.Title>
             <p className="mt-2">Are you sure you want to delete this event?</p>
@@ -96,7 +112,7 @@ export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
             <div className="mt-4 space-y-4">
