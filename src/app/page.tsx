@@ -17,7 +17,7 @@ interface UserAvailability {
   name: string;
   isBusy: boolean;
   nextAvailable: string;
-  availableSlots?: { start: string; end: string }[]; 
+  availableSlots?: { start: string; end: string }[];
 }
 
 export default function HomePage() {
@@ -35,8 +35,8 @@ export default function HomePage() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newUserName, setNewUserName] = useState('');
-const [currentUserPage, setCurrentUserPage] = useState(0);
-const usersPerPage = 10;
+  const [currentUserPage, setCurrentUserPage] = useState(0);
+  const usersPerPage = 10;
 
 
   useEffect(() => {
@@ -100,9 +100,9 @@ const usersPerPage = 10;
 
   const handleDeleteEvent = async (eventId: number) => {
     console.log('Trying to delete event', eventId);
-const proceed = window.confirm('Are you sure you want to delete this event?');
-console.log('Confirmed:', proceed);
-if (!proceed) return;
+    const proceed = window.confirm('Are you sure you want to delete this event?');
+    console.log('Confirmed:', proceed);
+    if (!proceed) return;
 
     const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
 
@@ -116,74 +116,76 @@ if (!proceed) return;
     <div className="p-10 dark:bg-zinc-900 dark:text-white min-h-screen bg-gray-100 text-black">
       <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1>
 
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+
         <div className="flex flex-wrap gap-2">
-<button
-  onClick={() => setSelectedUserId(null)}
-  className={`px-4 py-2 rounded ${selectedUserId === null
-    ? 'bg-blue-600 text-white'
-    : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
-    }`}
->
-  All Users (
-    {start && end
-      ? availableUsers.filter(u => !u.isBusy).length
-      : users.length
-    } )
-</button>
-
-
-<div className="flex items-center gap-2 overflow-x-auto">
-  {/* Left Arrow */}
-  <button
-    disabled={currentUserPage === 0}
-    onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
-    className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
-  >
-    &lt;
-  </button>
-
-  {/* User Buttons */}
-  <div className="flex gap-2 flex-wrap">
-    {users
-      .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
-      .map(user => {
-        const availability = getAvailabilityStatus(user.id);
-        return (
           <button
-            key={user.id}
-            onClick={() => setSelectedUserId(user.id)}
-            className={`px-4 py-2 rounded flex flex-col items-start ${
-              selectedUserId === user.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
-            }`}
+            onClick={() => setSelectedUserId(null)}
+            className={`px-4 py-2 rounded ${selectedUserId === null
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
+              }`}
           >
-            <span>{user.name}</span>
-            {/* Optional: show availability below name */}
-            {/* {availability && (
+            All Users (
+            {start && end
+              ? availableUsers.filter(u => !u.isBusy).length
+              : users.length
+            } )
+          </button>
+
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 overflow-x-auto max-w-full">
+
+            {/* Left Arrow */}
+            <button
+              disabled={currentUserPage === 0}
+              onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
+              className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
+            >
+              &lt;
+            </button>
+
+            {/* User Buttons */}
+            <div className="flex gap-2 flex-wrap justify-start">
+
+              {users
+                .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
+                .map(user => {
+                  const availability = getAvailabilityStatus(user.id);
+                  return (
+                    <button
+                      key={user.id}
+                      onClick={() => setSelectedUserId(user.id)}
+                      className={`px-4 py-2 rounded flex flex-col items-start ${selectedUserId === user.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
+                        }`}
+                    >
+                      <span>{user.name}</span>
+                      {/* Optional: show availability below name */}
+                      {/* {availability && (
               <span className="text-xs text-gray-800 dark:text-gray-300">
                 {availability}
               </span>
             )} */}
-          </button>
-        );
-      })}
-  </div>
+                    </button>
+                  );
+                })}
+            </div>
 
-  {/* Right Arrow */}
-  <button
-    disabled={(currentUserPage + 1) * usersPerPage >= users.length}
-    onClick={() =>
-      setCurrentUserPage(prev =>
-        (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
-      )
-    }
-    className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
-  >
-    &gt;
-  </button>
-</div>
+            {/* Right Arrow */}
+            <button
+              disabled={(currentUserPage + 1) * usersPerPage >= users.length}
+              onClick={() =>
+                setCurrentUserPage(prev =>
+                  (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
+                )
+              }
+              className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
+            >
+              &gt;
+            </button>
+          </div>
 
         </div>
 
@@ -196,7 +198,8 @@ if (!proceed) return;
 
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 p-4 rounded shadow">
+      <div className="bg-white dark:bg-zinc-800 p-4 rounded shadow w-full overflow-x-auto">
+
         <Calendar
           localizer={localizer}
           events={formattedEvents}
@@ -206,7 +209,8 @@ if (!proceed) return;
           defaultView="month"
           selectable
           popup
-          style={{ height: 600 }}
+          style={{ minWidth: '700px', height: 600 }}
+
           components={{
             event: () => null, // hide event bars in month view
             dateCellWrapper: (props) => (
@@ -235,7 +239,8 @@ if (!proceed) return;
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-full max-w-md text-black dark:text-white dark:border dark:border-zinc-700">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+
             <h2 className="text-lg font-semibold mb-4">Add User</h2>
             <input
               type="text"
@@ -290,64 +295,64 @@ if (!proceed) return;
                 );
               })}
             </select>
-{/* Show Available Slots for Selected Users */}
-{selectedUsers.length > 0 && (
-  <div className="mb-4">
-    <label className="block mb-1 font-medium">Available Slots:</label>
-    {availableUsers
-      .filter(u => selectedUsers.includes(u.id))
-      .map(user => (
-        <div key={user.id} className="mb-2">
-          <p className="font-semibold">{user.name}</p>
-          <div className="flex flex-wrap gap-2">
-            {Array.isArray(user.availableSlots) && user.availableSlots.length > 0 ? (
-              user.availableSlots.map(slot => (
-                <button
-                  key={slot.start}
-                  className="px-3 py-1 bg-green-200 hover:bg-green-300 text-sm rounded"
-                  onClick={() => {
-                    setStart(slot.start.slice(0, 16));
-                    setEnd(slot.end.slice(0, 16));
-                  }}
-                >
-                  {new Date(slot.start).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}{' '}
-                  -{' '}
-                  {new Date(slot.end).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </button>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No available slots</p>
+            {/* Show Available Slots for Selected Users */}
+            {selectedUsers.length > 0 && (
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Available Slots:</label>
+                {availableUsers
+                  .filter(u => selectedUsers.includes(u.id))
+                  .map(user => (
+                    <div key={user.id} className="mb-2">
+                      <p className="font-semibold">{user.name}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(user.availableSlots) && user.availableSlots.length > 0 ? (
+                          user.availableSlots.map(slot => (
+                            <button
+                              key={slot.start}
+                              className="px-3 py-1 bg-green-200 hover:bg-green-300 text-sm rounded"
+                              onClick={() => {
+                                setStart(slot.start.slice(0, 16));
+                                setEnd(slot.end.slice(0, 16));
+                              }}
+                            >
+                              {new Date(slot.start).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
+                              -{' '}
+                              {new Date(slot.end).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500">No available slots</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
             )}
-          </div>
-        </div>
-      ))}
-  </div>
-)}
 
-<div className="flex justify-between items-center gap-2">
+            <div className="flex justify-between items-center gap-2">
 
 
-  <div className="flex gap-2">
-    <button
-      onClick={() => setShowModal(false)}
-      className="px-4 py-2 bg-gray-400 rounded text-white"
-    >
-      Cancel
-    </button>
-    <button
-      onClick={handleSubmit}
-      className="px-4 py-2 bg-blue-600 text-white rounded"
-    >
-      Create
-    </button>
-  </div>
-</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-gray-400 rounded text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
 
           </div>
         </div>
@@ -356,7 +361,8 @@ if (!proceed) return;
       {/* Event Details Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-full max-w-md text-black dark:text-white">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
             <p><strong>Start:</strong> {new Date(selectedEvent.start).toLocaleString()}</p>
@@ -378,7 +384,8 @@ if (!proceed) return;
       {/* Daily Events Modal */}
       {showDayEventsModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-full max-w-md text-black dark:text-white">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+
             <h2 className="text-lg font-semibold mb-4">
               Events on {selectedDate?.toLocaleDateString()}
             </h2>
@@ -391,10 +398,10 @@ if (!proceed) return;
                 </p>
                 <p className="text-sm">
                   Assigned to:  {Array.isArray(event.assignedTo)
-  ? event.assignedTo.map(u => u.user?.name).join(', ')
-  : typeof event.assignedTo === 'object' && event.assignedTo !== null && 'user' in event.assignedTo
-    ? (event.assignedTo as { user?: { name?: string } }).user?.name || '—'
-    : '—'}
+                    ? event.assignedTo.map(u => u.user?.name).join(', ')
+                    : typeof event.assignedTo === 'object' && event.assignedTo !== null && 'user' in event.assignedTo
+                      ? (event.assignedTo as { user?: { name?: string } }).user?.name || '—'
+                      : '—'}
                 </p>
                 <div className="flex gap-2 mt-2">
                   <button
@@ -408,10 +415,11 @@ if (!proceed) return;
                   </button>
                   <button
                     className="px-3 py-1 bg-red-500 text-white rounded text-sm"
-                    
-                    onClick={() =>
-                        {console.log('Delete clicked for event:', event.id);
-                       handleDeleteEvent(event.id)}}
+
+                    onClick={() => {
+                      console.log('Delete clicked for event:', event.id);
+                      handleDeleteEvent(event.id)
+                    }}
                   >
                     Delete
                   </button>

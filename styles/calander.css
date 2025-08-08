@@ -89,3 +89,38 @@
     height: auto !important;
   }
 }
+/* Fix toolbar layout */
+.rbc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+/* Ensure view buttons (Month, Week, Agenda) align properly */
+.rbc-toolbar .rbc-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* On small screens, center buttons */
+@media (max-width: 640px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rbc-toolbar .rbc-btn-group {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .rbc-toolbar-label {
+    margin-top: 0.5rem;
+    text-align: center;
+    width: 100%;
+  }
+}
