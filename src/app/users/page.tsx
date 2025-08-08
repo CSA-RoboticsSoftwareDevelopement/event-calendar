@@ -194,7 +194,7 @@ const handleSubmitUser = async () => {
   <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center z-50">
 
     <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md">
-      <h3 className="text-lg font-semibold mb-4 text-black dark:text-white">Add New User</h3>
+      <h3 className="text-lg font-semibold mb-4 text-black dark:text-white"> User</h3>
       <div className="space-y-4">
         <input
           type="text"
