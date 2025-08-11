@@ -1,22 +1,15 @@
-// app/api/events/[id]/route.ts
 import { prisma } from '@/src/lib/prisma';
 import { NextResponse } from 'next/server';
-import { NextApiRequest, NextApiResponse } from 'next';
+
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const eventId = parseInt(params.id, 10);
-
   if (isNaN(eventId)) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
   try {
-    await prisma.eventAssignment.deleteMany({
-      where: { eventId },
-    });
-
-    await prisma.event.delete({
-      where: { id: eventId },
-    });
+    await prisma.eventAssignment.deleteMany({ where: { eventId } });
+    await prisma.event.delete({ where: { id: eventId } });
 
     return NextResponse.json({ message: 'Event deleted successfully' });
   } catch (err) {
@@ -24,14 +17,18 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 }
+
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const eventId = parseInt(params.id, 10);
   if (isNaN(eventId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
-  const body = await req.json();
-  const { title, start, end, assignedTo } = body;
-
   try {
+    const body = await req.json();
+    const { title, start, end, assignedTo } = body;
+
+    console.log("Received PUT body:", body);
+
+    // Update event
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },
       data: {
@@ -41,18 +38,16 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       },
     });
 
-    // Remove old assignments
-    await prisma.eventAssignment.deleteMany({
-      where: { eventId },
-    });
+    // Clear old assignments
+    //await prisma.eventAssignment.deleteMany({ where: { eventId } });
 
     // Add new assignments
-    if (Array.isArray(assignedTo)) {
+    if (Array.isArray(assignedTo) && assignedTo.length > 0) {
       const createAssignments = assignedTo.map((userId: string) =>
         prisma.eventAssignment.create({
           data: {
             eventId,
-            userId: parseInt(userId, 10), // ✅ Fix here
+            userId: parseInt(userId, 10),
           },
         })
       );
@@ -60,35 +55,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     return NextResponse.json(updatedEvent);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Update error:', err);
-    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Failed to update event' }, { status: 500 });
   }
-}
-
-
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const {
-    query: { id },
-    method,
-  } = req;
-
-  if (method === 'DELETE') {
-    try {
-      await prisma.eventAssignment.delete({
-        where: {
-          id: Number(id),
-        },
-      });
-
-      return res.status(200).json({ message: 'Event deleted successfully' });
-    } catch (error) {
-      console.error('Delete error:', error);
-      return res.status(500).json({ error: 'Server error' });
-    }
-  }
-
-  res.setHeader('Allow', ['DELETE']);
-  res.status(405).end(`Method ${method} Not Allowed`);
 }

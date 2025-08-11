@@ -12,21 +12,6 @@ export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
-
-const handleAddUsers = (newUsers: User[]) => {
-  // Merge existing + new users without duplicates
-  const mergedUsers = [
-    ...assignedUsers,
-    ...newUsers.filter(
-      newUser => !assignedUsers.some(user => user.id === newUser.id)
-    ),
-  ];
-
-  setAssignedUsers(mergedUsers);
-};
-
-
 
   const [formData, setFormData] = useState({
     title: event.title,
@@ -64,29 +49,25 @@ const handleAddUsers = (newUsers: User[]) => {
     }
   };
 
-const handleSave = async () => {
-  try {
-    const res = await fetch(`/api/events/${event.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
-    if (res.ok) {
-      alert('Event updated!');
-      setShowEditModal(false);
-      window.location.reload();
-    } else {
-      alert('Failed to update event.');
+  const handleEdit = async () => {
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        alert('Event updated!');
+        setShowEditModal(false);
+        window.location.reload();
+      } else {
+        alert('Failed to update.');
+      }
+    } catch (err) {
+      console.error('Update error:', err);
     }
-  } catch (err) {
-    console.error('Update error:', err);
-  }
-};
-
-
-
-
-
+  };
 
   return (
     <div className="flex justify-between items-center">
@@ -197,7 +178,7 @@ const handleSave = async () => {
 
             <div className="flex justify-end mt-4 gap-2">
               <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleSave}>Save</button>
+              <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleEdit}>Save</button>
             </div>
           </Dialog.Panel>
         </Dialog>

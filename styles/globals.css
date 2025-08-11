@@ -6,3 +6,9 @@
 html {
   scroll-behavior: smooth;
 }
+
+option:checked {
+  background-color: #cce5ff !important; /* light blue */
+  font-weight: bold;
+  color: #000;
+}
