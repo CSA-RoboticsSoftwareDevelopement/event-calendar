@@ -114,7 +114,7 @@ export default function HomePage() {
 
   return (
     <div className="p-10 dark:bg-zinc-900 dark:text-white min-h-screen bg-gray-100 text-black">
-      <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1>
+      {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
 

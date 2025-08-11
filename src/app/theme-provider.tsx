@@ -55,7 +55,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}
             className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700"
           >
-            {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            {theme === 'light' ? '🌙 ' : '☀️ '}
           </button>
         </div>
       </header>

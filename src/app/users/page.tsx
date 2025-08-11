@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FilePen } from "lucide-react"; // or PencilLine, SquarePen, etc.
 
 type User = {
   id: number;
@@ -15,10 +17,17 @@ export default function UsersPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', designation: '' });
   const [editUserId, setEditUserId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 15;
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(users.length / usersPerPage);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -102,64 +111,98 @@ export default function UsersPage() {
           <p>Loading users...</p>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="w-full border border-gray-300 dark:border-zinc-700 text-sm">
-              <thead className="bg-gray-400 dark:bg-zinc-700">
-                <tr>
-                  <th className="border border-gray-300 dark:border-zinc-600 px-4 py-3 text-left font-bold text-black dark:text-white">ID</th>
-                  <th className="border border-gray-300 dark:border-zinc-600 px-4 py-3 text-left font-bold text-black dark:text-white">Name</th>
-                  <th className="border border-gray-300 dark:border-zinc-600 px-4 py-3 text-left font-bold text-black dark:text-white">Email</th>
-                  <th className="border border-gray-300 dark:border-zinc-600 px-4 py-3 text-left font-bold text-black dark:text-white">Designation</th>
-                  <th className="border border-gray-300 dark:border-zinc-600 px-4 py-3 text-left font-bold text-black dark:text-white">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700">
-                    <td className="border border-gray-300 dark:border-zinc-600 px-4 py-3">{user.id}</td>
-                    <td className="border border-gray-300 dark:border-zinc-600 px-4 py-3 break-words max-w-xs">{user.name}</td>
-                    <td className="border border-gray-300 dark:border-zinc-600 px-4 py-3 break-words max-w-xs">{user.email}</td>
-                    <td className="border border-gray-300 dark:border-zinc-600 px-4 py-3 break-words max-w-xs">{user.designation}</td>
-                    <td className="border border-gray-300 dark:border-zinc-600 px-4 py-3">
-                      <div className="flex flex-wrap justify-center items-center gap-3">
-                        <button
-                          onClick={() => {
-                            setEditUserId(user.id);
-                            setFormData({
-                              name: user.name ?? '',
-                              email: user.email ?? '',
-                              designation: user.designation ?? '',
-                            });
-                            setShowModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
-                          title="Edit user"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => deleteUser(user.id)}
-                          className="text-red-600 hover:text-red-800 text-sm sm:text-base"
-                          title="Delete user"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
+            <div className="rounded-xl overflow-hidden border border-gray-300 dark:border-zinc-700">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-400 dark:bg-zinc-700">
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-gray-500">
-                      No users found.
-                    </td>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">ID</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Name</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Email</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Designation</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700">
+                      <td className="border px-4 py-3">{user.id}</td>
+                      <td className="border px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {/* <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserCircle className="text-gray-500 w-5 h-5" />
+                          </div> */}
+                          <span className="text-sm font-medium break-words max-w-xs">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="border px-4 py-3 break-words max-w-xs">{user.email}</td>
+                      <td className="border px-4 py-3 break-words max-w-xs">{user.designation}</td>
+                      <td className="border px-4 py-3">
+                        <div className="flex flex-wrap justify-center items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setEditUserId(user.id);
+                              setFormData({
+                                name: user.name ?? '',
+                                email: user.email ?? '',
+                                designation: user.designation ?? '',
+                              });
+                              setShowModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
+                            title="Edit user"
+                          >
+                            <FilePen className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => deleteUser(user.id)}
+                            className="text-red-600 hover:text-red-800 text-sm sm:text-base"
+                            title="Delete user"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-6 text-gray-500">
+                        No users found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* Add/Edit User Modal */}
+        {/* Pagination */}
+        {users.length > usersPerPage && (
+          <div className="flex justify-end mt-6">
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="px-4 py-2 flex items-center text-black dark:text-white">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center z-50">
             <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md mx-4">

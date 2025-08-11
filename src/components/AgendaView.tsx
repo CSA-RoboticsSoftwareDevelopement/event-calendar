@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarEvent } from '@/src/types/Event';
 import { Trash2, Pencil } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
+import { FilePen } from "lucide-react"; // or PencilLine, SquarePen, etc.
 
 interface User {
   id: string;
@@ -76,7 +77,7 @@ export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
       </div>
 
       <div className="flex items-center gap-2 ml-4">
-<Pencil
+<FilePen
   className="w-4 h-4 text-blue-600 cursor-pointer"
   onClick={(e) => {
     e.stopPropagation(); // prevent opening the event details modal 
