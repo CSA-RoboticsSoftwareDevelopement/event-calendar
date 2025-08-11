@@ -42,17 +42,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     //await prisma.eventAssignment.deleteMany({ where: { eventId } });
 
     // Add new assignments
-    if (Array.isArray(assignedTo) && assignedTo.length > 0) {
-      const createAssignments = assignedTo.map((userId: string) =>
-        prisma.eventAssignment.create({
-          data: {
-            eventId,
-            userId: parseInt(userId, 10),
-          },
-        })
-      );
-      await Promise.all(createAssignments);
-    }
+if (Array.isArray(assignedTo) && assignedTo.length > 0) {
+  const validIds = assignedTo
+    .map(id => parseInt(id, 10))
+    .filter(id => !isNaN(id));
+
+  await Promise.all(
+    validIds.map(userId =>
+      prisma.eventAssignment.create({
+        data: { eventId, userId }
+      })
+    )
+  );
+}
+
 
     return NextResponse.json(updatedEvent);
   } catch (err: any) {

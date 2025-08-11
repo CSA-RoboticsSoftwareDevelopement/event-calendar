@@ -26,6 +26,17 @@ const handleAddUsers = (newUsers: User[]) => {
   setAssignedUsers(mergedUsers);
 };
 
+function toLocalDateTimeString(date: Date) {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1); // months are 0-based
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 
 
   const [formData, setFormData] = useState({
@@ -66,26 +77,32 @@ const handleAddUsers = (newUsers: User[]) => {
 
 const handleSave = async () => {
   try {
+    const payload = {
+      ...formData,
+      start: new Date(formData.start).toISOString(),
+      end: new Date(formData.end).toISOString(),
+      assignedTo: formData.assignedTo.map(id => Number(id)), // convert to numbers
+    };
+
     const res = await fetch(`/api/events/${event.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(payload),
     });
+
     if (res.ok) {
       alert('Event updated!');
       setShowEditModal(false);
       window.location.reload();
     } else {
+      const errorText = await res.text();
+      console.error("Backend error:", errorText);
       alert('Failed to update event.');
     }
   } catch (err) {
     console.error('Update error:', err);
   }
 };
-
-
-
-
 
 
   return (
@@ -144,18 +161,18 @@ const handleSave = async () => {
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Title"
               />
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={new Date(formData.start).toISOString().slice(0, 16)}
-                onChange={e => setFormData({ ...formData, start: e.target.value })}
-              />
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={new Date(formData.end).toISOString().slice(0, 16)}
-                onChange={e => setFormData({ ...formData, end: e.target.value })}
-              />
+<input
+  type="datetime-local"
+  className="w-full border px-3 py-2 rounded"
+  value={toLocalDateTimeString(new Date(formData.start))}
+  onChange={e => setFormData({ ...formData, start: e.target.value })}
+/>
+<input
+  type="datetime-local"
+  className="w-full border px-3 py-2 rounded"
+  value={toLocalDateTimeString(new Date(formData.end))}
+  onChange={e => setFormData({ ...formData, end: e.target.value })}
+/>
 
               {/* Already assigned users */}
               {event.assignedTo?.length > 0 && (
