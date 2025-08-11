@@ -66,7 +66,7 @@ function toLocalDateTimeString(date: Date) {
       if (res.ok) {
         alert('Event deleted!');
         setShowDeleteModal(false);
-        window.location.reload();
+       // window.location.reload();
       } else {
         alert('Failed to delete.');
       }
@@ -93,7 +93,7 @@ const handleSave = async () => {
     if (res.ok) {
       alert('Event updated!');
       setShowEditModal(false);
-      window.location.reload();
+      //window.location.reload();
     } else {
       const errorText = await res.text();
       console.error("Backend error:", errorText);
