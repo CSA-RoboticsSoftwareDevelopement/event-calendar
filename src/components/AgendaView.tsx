@@ -12,19 +12,19 @@ export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
+//const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
 
-const handleAddUsers = (newUsers: User[]) => {
-  // Merge existing + new users without duplicates
-  const mergedUsers = [
-    ...assignedUsers,
-    ...newUsers.filter(
-      newUser => !assignedUsers.some(user => user.id === newUser.id)
-    ),
-  ];
+// const handleAddUsers = (newUsers: User[]) => {
+//   // Merge existing + new users without duplicates
+//   const mergedUsers = [
+//     ...assignedUsers,
+//     ...newUsers.filter(
+//       newUser => !assignedUsers.some(user => user.id === newUser.id)
+//     ),
+//   ];
 
-  setAssignedUsers(mergedUsers);
-};
+//   setAssignedUsers(mergedUsers);
+// };
 
 function toLocalDateTimeString(date: Date) {
   const pad = (n: number) => n.toString().padStart(2, '0');
@@ -117,22 +117,28 @@ const handleSave = async () => {
       </div>
 
       <div className="flex items-center gap-2 ml-4">
-        <FilePen
-          className="w-4 h-4 text-blue-600 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowEditModal(true);
-          }}
-          title="Modify"
-        />
-        <Trash2
-          className="w-4 h-4 text-red-600 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowDeleteModal(true);
-          }}
-          title="Delete"
-        />
+<span title="Modify">
+  <FilePen
+    className="w-4 h-4 text-blue-600 cursor-pointer"
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowEditModal(true);
+    }}
+  />
+</span>
+
+
+<span title="Delete">
+  <Trash2
+    className="w-4 h-4 text-red-600 cursor-pointer"
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowDeleteModal(true);
+    }}
+  />
+</span>
+
+
       </div>
 
       {/* Delete Modal */}

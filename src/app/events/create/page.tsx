@@ -1,10 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface User {
+  id: number;
+  name: string;
+}
 
 export default function CreateEvent() {
   const router = useRouter();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -16,28 +21,28 @@ export default function CreateEvent() {
 
   useEffect(() => {
     fetch('/api/users')
-      .then(res => res.json())
-      .then(setUsers);
+      .then((res) => res.json())
+      .then((data: User[]) => setUsers(data));
   }, []);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-
-  const handleUserSelect = (e: any) => {
+  const handleUserSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     const options = e.target.options;
     const selected: number[] = [];
     for (let i = 0; i < options.length; i++) {
       if (options[i].selected) selected.push(Number(options[i].value));
     }
-    setForm(prev => ({ ...prev, userIds: selected }));
+    setForm((prev) => ({ ...prev, userIds: selected }));
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
     const res = await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -45,8 +50,8 @@ export default function CreateEvent() {
     });
 
     if (res.status === 409) {
-      const data = await res.json();
-      setError(`Unavailable: ${data.conflicts.map((u: any) => u.name).join(', ')}`);
+      const data: { conflicts: User[] } = await res.json();
+      setError(`Unavailable: ${data.conflicts.map((u) => u.name).join(', ')}`);
       return;
     }
 
@@ -65,7 +70,7 @@ export default function CreateEvent() {
 
         <label>Assign to:</label><br />
         <select multiple onChange={handleUserSelect}>
-          {users.map((u: any) => (
+          {users.map((u) => (
             <option key={u.id} value={u.id}>{u.name}</option>
           ))}
         </select><br />

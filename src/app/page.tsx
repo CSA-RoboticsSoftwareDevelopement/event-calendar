@@ -7,9 +7,11 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'styles/calander.css';
 import { CalendarEvent, User } from '@/src/types/Event';
 import { CustomAgendaEvent } from '@/src/components/AgendaView';
-import { CustomEvent } from '@/src/components/CustomEvent';
-import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
+//import { CustomEvent } from '@/src/components/CustomEvent';
+//import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
+//import type { NextRequest } from 'next/server';
+
 const localizer = momentLocalizer(moment);
 
 interface UserAvailability {
@@ -34,7 +36,7 @@ export default function HomePage() {
   const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [newUserName, setNewUserName] = useState('');
+  //const [newUserName, setNewUserName] = useState('');
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const usersPerPage = 10;
 
@@ -151,7 +153,7 @@ export default function HomePage() {
               {users
                 .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
                 .map(user => {
-                  const availability = getAvailabilityStatus(user.id);
+                 // const availability = getAvailabilityStatus(user.id);
                   return (
                     <button
                       key={user.id}

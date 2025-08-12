@@ -9,6 +9,7 @@ export interface CalendarEvent {
 export interface User {
   id: number;
   name: string;
+   nextAvailable?: string;
 }
 export interface CalendarEvent {
   id: number;

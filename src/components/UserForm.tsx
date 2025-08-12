@@ -1,7 +1,11 @@
 'use client';
 import { useState } from 'react';
 
-export default function UserForm({ onUserCreated }: any) {
+interface UserFormProps {
+  onUserCreated: () => void;
+}
+
+export default function UserForm({ onUserCreated }: UserFormProps) {
   const [name, setName] = useState('');
 
   const handleSubmit = async () => {
