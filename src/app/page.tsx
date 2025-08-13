@@ -249,7 +249,7 @@ export default function HomePage() {
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
-            <h2 className="text-lg font-semibold mb-4">Add User</h2>
+            <h2 className="text-lg font-semibold mb-4"> User</h2>
             <input
               type="text"
               placeholder="Title"
