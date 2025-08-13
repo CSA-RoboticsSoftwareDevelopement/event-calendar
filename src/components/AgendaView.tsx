@@ -8,7 +8,7 @@ interface User {
   name: string;
 }
 
-export const CustomAgendaEvent = ({ event }: { event: CalendarEvent }) => {
+export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEvent, onEventChanged?: () => void }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -62,11 +62,11 @@ function toLocalDateTimeString(date: Date) {
 
   const handleDelete = async () => {
     try {
+      setShowDeleteModal(false); // Close modal first
       const res = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
       if (res.ok) {
         alert('Event deleted!');
-        setShowDeleteModal(false);
-       // window.location.reload();
+        if (onEventChanged) onEventChanged();
       } else {
         alert('Failed to delete.');
       }
@@ -91,9 +91,9 @@ const handleSave = async () => {
     });
 
     if (res.ok) {
+      setShowEditModal(false); // Close modal first
       alert('Event updated!');
-      setShowEditModal(false);
-      //window.location.reload();
+      if (onEventChanged) onEventChanged();
     } else {
       const errorText = await res.text();
       console.error("Backend error:", errorText);

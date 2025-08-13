@@ -41,11 +41,15 @@ export default function HomePage() {
   const usersPerPage = 10;
 
 
-  useEffect(() => {
+  // Refetch events function
+  const refetchEvents = () => {
     fetch('/api/events')
       .then(res => res.json())
-      .then((data: CalendarEvent[]) => setEvents(data));
+      .then((data: CalendarEvent[]) => setEvents([...data])); // always new array reference
+  };
 
+  useEffect(() => {
+    refetchEvents();
     fetch('/api/users')
       .then(res => res.json())
       .then((data: User[]) => setUsers(data));
@@ -219,7 +223,9 @@ export default function HomePage() {
               <CustomDateCellWrapper {...props} events={formattedEvents} />
             ),
             agenda: {
-              event: CustomAgendaEvent,
+              event: (props) => (
+                <CustomAgendaEvent {...props} onEventChanged={refetchEvents} />
+              ),
             },
           }}
 
