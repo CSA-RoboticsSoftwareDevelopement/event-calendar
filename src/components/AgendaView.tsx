@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarEvent } from '@/src/types/Event';
 import { Trash2, FilePen } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
+import { X } from "lucide-react";
 
 interface User {
   id: string | number;
@@ -45,6 +46,8 @@ function toLocalDateTimeString(date: Date) {
     end: event.end,
     assignedTo: event.assignedTo?.map(a => a.user?.id?.toString()) || [],
   });
+// Add new state for pending removals
+const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
 
   // Fetch all users for the dropdown
   useEffect(() => {
@@ -75,13 +78,47 @@ function toLocalDateTimeString(date: Date) {
     }
   };
 
+
+const handleRemoveAssignedUser = (userId?: string | number) => {
+  if (userId === undefined || userId === null) {
+    console.error('Invalid user ID:', userId);
+    alert('Cannot remove user: Invalid user ID');
+    return;
+  }
+
+  const userIdStr = String(userId);
+  
+  // Add to pending removals instead of making API call
+  setPendingRemovals(prev => [...prev, userIdStr]);
+  
+  // Update local UI state
+  setFormData(prev => ({
+    ...prev,
+    assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
+  }));
+};
+
 const handleSave = async () => {
   try {
+    // First process pending removals
+    if (pendingRemovals.length > 0) {
+      await Promise.all(
+        pendingRemovals.map(userId => 
+          fetch(`/api/events/${event.id}/assignments`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }),
+          })
+        )
+      );
+    }
+
+    // Then update the event itself
     const payload = {
       ...formData,
       start: new Date(formData.start).toISOString(),
       end: new Date(formData.end).toISOString(),
-      assignedTo: formData.assignedTo.map(id => Number(id)), // convert to numbers
+      assignedTo: formData.assignedTo.map(id => Number(id)),
     };
 
     const res = await fetch(`/api/events/${event.id}`, {
@@ -91,7 +128,8 @@ const handleSave = async () => {
     });
 
     if (res.ok) {
-      setShowEditModal(false); // Close modal first
+      setPendingRemovals([]); // Clear pending removals
+      setShowEditModal(false);
       alert('Event updated!');
       if (onEventChanged) onEventChanged();
     } else {
@@ -101,6 +139,7 @@ const handleSave = async () => {
     }
   } catch (err) {
     console.error('Update error:', err);
+    alert('Error saving changes. Please try again.');
   }
 };
 
@@ -160,6 +199,12 @@ const handleSave = async () => {
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
+      {/* Add this warning */}
+      {pendingRemovals.length > 0 && (
+        <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
+          You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
+        </div>
+      )}
             <div className="mt-4 space-y-4">
               <input
                 className="w-full border px-3 py-2 rounded"
@@ -181,18 +226,35 @@ const handleSave = async () => {
 />
 
               {/* Already assigned users */}
-              {event.assignedTo?.length > 0 && (
-                <div className="mt-2 p-2 bg-gray-100 rounded">
-                  <p className="text-sm font-semibold">Currently Assigned:</p>
-                  <ul className="list-disc list-inside text-sm">
-                    {event.assignedTo.map((a, index) => (
-                      <li key={`${a.user?.id || 'unknown'}-${index}`}>
-                        {a.user?.name || "Unknown"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+{event.assignedTo?.length > 0 && (
+  <div className="mt-2 p-2 bg-gray-100 rounded">
+    <p className="text-sm font-semibold">Currently Assigned:</p>
+    <ul className="list-disc list-inside text-sm space-y-1">
+      {event.assignedTo
+        .filter(assignment => 
+          !pendingRemovals.includes(String(assignment.userId))
+        )
+        .map((assignment, index) => (
+          <li
+            key={`${assignment.userId || 'unknown'}-${index}`}
+            className="flex items-center justify-between"
+          >
+            <span>{assignment.user?.name || "Unknown"}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveAssignedUser(assignment.userId);
+              }}
+              className="text-gray-500 hover:text-red-600"
+              title="Remove user"
+            >
+              <X size={14} />
+            </button>
+          </li>
+        ))}
+    </ul>
+  </div>
+)}
 
               {/* Assigned To - Multi-select */}
               <select
