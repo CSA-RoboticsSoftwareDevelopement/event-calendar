@@ -11,7 +11,7 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 //import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 //import type { NextRequest } from 'next/server';
-import { format } from 'date-fns';
+
 const localizer = momentLocalizer(moment);
 
 interface UserAvailability {
@@ -64,40 +64,15 @@ export default function HomePage() {
   }, [start, end]);
 
   const handleSubmit = async () => {
-    // Format start & end before sending to backend
-    const formattedStart = format(new Date(start), 'dd-MM-yyyy HH:mm');
-    const formattedEnd = format(new Date(end), 'dd-MM-yyyy HH:mm');
-
     const res = await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        start: formattedStart,
-        end: formattedEnd,
-        userIds: selectedUsers
-      }),
+      body: JSON.stringify({ title, start, end, userIds: selectedUsers }),
     });
 
     if (res.ok) {
       const newEvent = await res.json();
-
-      // Ensure returned start/end are shown in 12-hour format on the frontend
-      const displayEvent = {
-        ...newEvent,
-        start: new Date(`1970-01-01T${newEvent.start}`).toLocaleString('en-US', {
-          hour: 'numeric',
-          minute: 'numeric',
-          hour12: true
-        }),
-        end: new Date(`1970-01-01T${newEvent.end}`).toLocaleString('en-US', {
-          hour: 'numeric',
-          minute: 'numeric',
-          hour12: true
-        })
-      };
-
-      setEvents([...events, displayEvent]);
+      setEvents([...events, newEvent]);
       setShowModal(false);
       setTitle('');
       setStart('');
@@ -188,14 +163,14 @@ export default function HomePage() {
               {users
                 .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
                 .map(user => {
-                  // const availability = getAvailabilityStatus(user.id);
+                 // const availability = getAvailabilityStatus(user.id);
                   return (
                     <button
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
                       className={`px-4 py-2 rounded flex flex-col items-start ${selectedUserId === user.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
                         }`}
                     >
                       <span>{user.name}</span>
@@ -404,39 +379,15 @@ export default function HomePage() {
       )}
 
       {/* Event Details Modal */}
-      {/* Event Details Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
-
-            {/* Only keep this version */}
-            <p>
-              <strong>Start:</strong>{" "}
-              {new Date(selectedEvent.start).toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true
-              })}
-            </p>
-            <p>
-              <strong>End:</strong>{" "}
-              {new Date(selectedEvent.end).toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true
-              })}
-            </p>
-
-            <p><strong>Assigned to:</strong> {selectedEvent.assignedTo?.map(u => u.user?.name).join(", ") || "—"}</p>
+            <p><strong>Start:</strong> {new Date(selectedEvent.start).toLocaleString()}</p>
+            <p><strong>End:</strong> {new Date(selectedEvent.end).toLocaleString()}</p>
+            <p><strong>Assigned to:</strong> {selectedEvent.assignedTo?.map(u => u.user?.name).join(', ') || '—'}</p>
 
             <div className="flex justify-end mt-4">
               <button
@@ -449,8 +400,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-
 
       {/* Daily Events Modal */}
       {showDayEventsModal && (
