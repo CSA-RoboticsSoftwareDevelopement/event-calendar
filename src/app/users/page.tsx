@@ -93,10 +93,25 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-md p-6">
+    <div
+      className="p-6"
+      style={{
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+      }}
+    >
+      <div
+        className="rounded-xl shadow-md p-6"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
+          <h2
+            className="text-2xl font-bold flex items-center gap-2"
+            style={{ color: 'var(--foreground)' }}
+          >
             User Table
           </h2>
           <button
@@ -124,7 +139,23 @@ export default function UsersPage() {
                 </thead>
                 <tbody>
                   {currentUsers.map(user => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700">
+                    <tr
+                      key={user.id}
+                      className="hover:bg-gray-50 dark:hover:bg-zinc-900"
+                      style={{
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                      onMouseEnter={e => {
+                        if (document.documentElement.classList.contains('dark')) {
+                          (e.currentTarget as HTMLTableRowElement).style.color = 'black';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (document.documentElement.classList.contains('dark')) {
+                          (e.currentTarget as HTMLTableRowElement).style.color = '';
+                        }
+                      }}
+                    >
                       <td className="border px-4 py-3">{user.id}</td>
                       <td className="border px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -188,7 +219,10 @@ export default function UsersPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <span className="px-4 py-2 flex items-center text-black dark:text-white">
+              <span
+                className="px-4 py-2 flex items-center"
+                style={{ color: 'var(--foreground)' }}
+              >
                 Page {currentPage} of {totalPages}
               </span>
               <button
@@ -206,7 +240,12 @@ export default function UsersPage() {
         {showModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center z-50">
             <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold mb-4 text-black dark:text-white">User</h3>
+              <h3
+                className="text-lg font-semibold mb-4"
+                style={{ color: 'var(--foreground)' }}
+              >
+                User
+              </h3>
               <div className="space-y-4">
                 <input
                   type="text"

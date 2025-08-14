@@ -119,7 +119,13 @@ export default function HomePage() {
   };
 
   return (
-    <div className="p-10 dark:bg-zinc-900 dark:text-white min-h-screen bg-gray-100 text-black">
+    <div
+      className="p-10 min-h-screen"
+      style={{
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+      }}
+    >
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -204,7 +210,13 @@ export default function HomePage() {
 
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 p-4 rounded shadow w-full overflow-x-auto">
+      <div
+        className="p-4 rounded shadow w-full overflow-x-auto"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
+      >
 
         <Calendar
           localizer={localizer}

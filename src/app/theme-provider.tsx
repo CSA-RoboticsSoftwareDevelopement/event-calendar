@@ -38,8 +38,20 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [theme]);
 
   return (
-    <div className="transition-colors duration-300 bg-white text-black dark:bg-zinc-900 dark:text-white min-h-screen">
-      <header className="p-4 bg-gray-200 dark:bg-zinc-800 flex justify-between items-center">
+      <div
+        className="transition-colors duration-300 min-h-screen"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
+      >
+      <header
+        className="p-4 flex justify-between items-center"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
+      >
         <h1 className="text-xl font-bold">📅 CSA Events</h1>
         <div className="flex items-center gap-2">
 <button
@@ -59,7 +71,15 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
           </button>
         </div>
       </header>
-      <main className="p-4">{children}</main>
+      <main
+        className="p-4"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
+      >
+        {children}
+      </main>
     </div>
   );
 }
