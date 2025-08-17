@@ -3,13 +3,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
-    console.log('DELETE assignment called with params:', params);
-    const eventId = parseInt(params.id);
-    const { userId } = await req.json();
+    // Await the params promise
+    const resolvedParams = await params;
+    console.log('DELETE assignment called with params:', resolvedParams);
+    
+    const eventId = parseInt(resolvedParams.id);
+    const { userId } = await request.json();
     console.log('Received userId:', userId);
 
     if (isNaN(eventId) || !userId) {

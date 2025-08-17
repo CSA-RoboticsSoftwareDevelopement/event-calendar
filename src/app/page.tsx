@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
+
+import { useRouter } from 'next/navigation';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'styles/calander.css';
 import { CalendarEvent, User } from '@/src/types/Event';
@@ -10,6 +12,7 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 //import { CustomEvent } from '@/src/components/CustomEvent';
 //import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
+
 //import type { NextRequest } from 'next/server';
 
 const localizer = momentLocalizer(moment);
@@ -23,6 +26,7 @@ interface UserAvailability {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserAvailability[]>([]);
@@ -118,6 +122,18 @@ export default function HomePage() {
     }
   };
 
+const toLocalDateTimeString = (utcString: string | Date) => {
+  const date = new Date(utcString);
+  return date.toLocaleString([], {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+
   return (
     <div
       className="p-10 min-h-screen"
@@ -201,12 +217,24 @@ export default function HomePage() {
 
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded"
-        >
-          + Create Event
-        </button>
+<div className="flex items-center space-x-2">
+  <button
+    onClick={() => router.push('/meetings')}
+    className="px-4 py-2 bg-green-600 text-white rounded"
+    title="View All Meetings"
+  >
+    View Meetings
+  </button>
+
+  <button
+    onClick={() => setShowModal(true)}
+    className="px-4 py-2 bg-green-600 text-white rounded"
+  >
+    + Create Event
+  </button>
+</div>
+
+
 
       </div>
 
@@ -228,8 +256,23 @@ export default function HomePage() {
           selectable
           popup
           style={{ minWidth: '700px', height: 600 }}
-
           components={{
+            toolbar: (props) => (
+              <div className="rbc-toolbar">
+                <span className="rbc-btn-group">
+                  <button type="button" onClick={() => props.onNavigate('TODAY')}>Today</button>
+                  <button type="button" onClick={() => props.onNavigate('PREV')}>Prev Month</button>
+                  <button type="button" onClick={() => props.onNavigate('NEXT')}>Next Month</button>
+                </span>
+                <span className="rbc-toolbar-label">{props.label}</span>
+                <span className="rbc-btn-group">
+                  <button type="button" onClick={() => props.onView('month')}>Month</button>
+                  <button type="button" onClick={() => props.onView('week')}>Week</button>
+                  <button type="button" onClick={() => props.onView('day')}>Day</button>
+                  <button type="button" onClick={() => props.onView('agenda')}>Agenda</button>
+                </span>
+              </div>
+            ),
             event: () => null, // hide event bars in month view
             dateCellWrapper: (props) => (
               <CustomDateCellWrapper {...props} events={formattedEvents} />
@@ -240,7 +283,6 @@ export default function HomePage() {
               ),
             },
           }}
-
           onSelectEvent={(event) => setSelectedEvent(event)}
           onSelectSlot={(slotInfo) => {
             setStart(slotInfo.start.toISOString().slice(0, 16));
@@ -385,8 +427,9 @@ export default function HomePage() {
 
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
-            <p><strong>Start:</strong> {new Date(selectedEvent.start).toLocaleString()}</p>
-            <p><strong>End:</strong> {new Date(selectedEvent.end).toLocaleString()}</p>
+<p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+<p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+
             <p><strong>Assigned to:</strong> {selectedEvent.assignedTo?.map(u => u.user?.name).join(', ') || '—'}</p>
 
             <div className="flex justify-end mt-4">
