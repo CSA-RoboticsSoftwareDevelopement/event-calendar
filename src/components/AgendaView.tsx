@@ -51,7 +51,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
   const handleDeleteConfirmation = async () => {
     setShowDeleteModal(false);
-    
+
     toast.custom((t) => (
       <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
         bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700`}
@@ -187,13 +187,16 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </span>
 
         <span title="Delete">
+          
           <Trash2
             className="w-4 h-4 text-red-600 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              setShowDeleteModal(true);
+              handleDeleteConfirmation(); // Directly show toast confirmation
             }}
           />
+
+
         </span>
       </div>
 
