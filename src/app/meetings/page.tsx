@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 type User = {
   id: number;
@@ -101,30 +102,82 @@ export default function EventsPage() {
       const res = await fetch('/api/events');
       const data = await res.json();
       setEvents(data);
+      toast.success('Events loaded successfully');
     } catch (error) {
       console.error('Error fetching events:', error);
+      toast.error('Failed to load events');
     } finally {
       setLoading(false);
     }
   };
 
   const deleteEvent = async (id: number) => {
-    const confirm = window.confirm('Are you sure you want to delete this event?');
-    if (!confirm) return;
+    // Enhanced confirmation dialog
+    const confirmDelete = await new Promise((resolve) => {
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+          max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+          <div className="flex-1 p-4">
+            <div className="flex items-start">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Confirm Deletion
+                </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Are you sure you want to delete this event? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex space-x-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(false);
+                }}
+                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-transparent focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(true);
+                }}
+                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-md border border-transparent focus:outline-none"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ), { duration: Infinity });
+    });
 
-    try {
-      const res = await fetch(`/api/events/${id}`, {
-        method: 'DELETE',
-      });
+    if (!confirmDelete) return;
 
-      if (res.ok) {
-        setEvents(prev => prev.filter(event => event.id !== id));
-      } else {
-        alert('Failed to delete event.');
+    const deletePromise = new Promise(async (resolve, reject) => {
+      try {
+        const res = await fetch(`/api/events/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (res.ok) {
+          setEvents(prev => prev.filter(event => event.id !== id));
+          resolve('Event deleted successfully');
+        } else {
+          reject('Failed to delete event');
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        reject('Error deleting event');
       }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-    }
+    });
+
+    toast.promise(deletePromise, {
+      loading: 'Deleting event...',
+      success: (message) => message as string,
+      error: (err) => err as string,
+    });
   };
 
   return (
@@ -147,20 +200,6 @@ export default function EventsPage() {
                 className="pl-10 pr-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white w-full"
               />
             </div>
-            
-            {/* Name Filter Dropdown */}
-            {/* <select
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              className="px-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white"
-            >
-              <option value="">All Names</option>
-              {getUniqueNames().map((name, index) => (
-                <option key={index} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select> */}
             
             {/* Designation Filter Dropdown */}
             <select
@@ -237,7 +276,6 @@ export default function EventsPage() {
                           title="Delete event"
                         >
                           <Trash2 className="w-4 h-4" />
-                         
                         </button>
                       </td>
                     </tr>

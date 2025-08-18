@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarEvent } from '@/src/types/Event';
 import { Trash2, FilePen, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string | number;
@@ -16,9 +17,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
     const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
-//   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
-return new Date(localDateTime).toISOString();
-
+    return new Date(localDateTime).toISOString();
   };
 
   const toLocalDateTimeString = (utcString: string | Date) => {
@@ -29,7 +28,7 @@ return new Date(localDateTime).toISOString();
 
   const [formData, setFormData] = useState({
     title: event.title,
-    start: event.start, // coming from backend as UTC
+    start: event.start,
     end: event.end,
     assignedTo: event.assignedTo?.map(a => a.user?.id?.toString()) || [],
   });
@@ -50,25 +49,62 @@ return new Date(localDateTime).toISOString();
     fetchUsers();
   }, []);
 
-  const handleDelete = async () => {
-    try {
-      setShowDeleteModal(false);
-      const res = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        alert('Event deleted!');
-        if (onEventChanged) onEventChanged();
-      } else {
-        alert('Failed to delete.');
-      }
-    } catch (err) {
-      console.error('Error deleting event:', err);
-    }
+  const handleDeleteConfirmation = async () => {
+    setShowDeleteModal(false);
+    
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+        bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700`}
+      >
+        <div className="flex flex-col space-y-3">
+          <h3 className="font-semibold text-lg">Confirm Deletion</h3>
+          <p>Are you sure you want to delete this event?</p>
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error('Deletion cancelled');
+              }}
+              className="px-3 py-1.5 text-sm rounded-md bg-gray-200 hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                toast.dismiss(t.id);
+                const deleteToastId = toast.loading('Deleting event...');
+
+                try {
+                  const res = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+
+                  if (res.ok) {
+                    toast.success('Event deleted successfully!', { id: deleteToastId });
+                    if (onEventChanged) onEventChanged();
+                  } else {
+                    throw new Error('Failed to delete event');
+                  }
+                } catch (err) {
+                  toast.error(err.message || 'Failed to delete event', { id: deleteToastId });
+                  console.error('Error deleting event:', err);
+                }
+              }}
+              className="px-3 py-1.5 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
+      position: 'bottom-right',
+    });
   };
 
   const handleRemoveAssignedUser = (userId?: string | number) => {
     if (userId === undefined || userId === null) {
       console.error('Invalid user ID:', userId);
-      alert('Cannot remove user: Invalid user ID');
+      toast.error('Cannot remove user: Invalid user ID');
       return;
     }
 
@@ -78,9 +114,13 @@ return new Date(localDateTime).toISOString();
       ...prev,
       assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
     }));
+
+    toast.success('User marked for removal. Changes will be saved when you click Save.');
   };
 
   const handleSave = async () => {
+    const toastId = toast.loading('Saving changes...');
+
     try {
       // First process pending removals
       if (pendingRemovals.length > 0) {
@@ -112,16 +152,15 @@ return new Date(localDateTime).toISOString();
       if (res.ok) {
         setPendingRemovals([]);
         setShowEditModal(false);
-        alert('Event updated!');
+        toast.success('Event updated successfully!', { id: toastId });
         if (onEventChanged) onEventChanged();
       } else {
         const errorText = await res.text();
-        console.error("Backend error:", errorText);
-        alert('Failed to update event.');
+        throw new Error(errorText || 'Failed to update event');
       }
     } catch (err) {
       console.error('Update error:', err);
-      alert('Error saving changes. Please try again.');
+      toast.error(err.message || 'Error saving changes. Please try again.', { id: toastId });
     }
   };
 
@@ -160,13 +199,27 @@ return new Date(localDateTime).toISOString();
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <Dialog.Panel className="bg-white rounded p-6 w-96">
+        <Dialog
+          open={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
+          <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
             <Dialog.Title className="text-lg font-semibold">Delete Event</Dialog.Title>
-            <p className="mt-2">Are you sure you want to delete this event?</p>
+            <p className="mt-2">This action will require confirmation</p>
             <div className="flex justify-end mt-4 gap-2">
-              <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-              <button className="bg-red-600 text-white px-4 py-2 rounded" onClick={handleDelete}>Delete</button>
+              <button
+                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleDeleteConfirmation}
+              >
+                Continue
+              </button>
             </div>
           </Dialog.Panel>
         </Dialog>

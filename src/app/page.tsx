@@ -12,6 +12,7 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 //import { CustomEvent } from '@/src/components/CustomEvent';
 //import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
+import toast from 'react-hot-toast';
 
 //import type { NextRequest } from 'next/server';
 
@@ -66,22 +67,74 @@ export default function HomePage() {
       .then(res => res.json())
       .then((data: UserAvailability[]) => setAvailableUsers(data));
   }, [start, end]);
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('Failed to fetch events');
+        const data = await res.json();
+        setEvents([...data]);
+      } catch (error) {
+        toast.error('Failed to load events');
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('Failed to fetch users');
+        const data = await res.json();
+        setUsers(data);
+      } catch (error) {
+        toast.error('Failed to load users');
+      }
+    };
+
+    fetchEvents();
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    if (!start || !end) return;
+
+    const fetchAvailability = async () => {
+      try {
+        const res = await fetch(`/api/users/availability?start=${start}&end=${end}`);
+        if (!res.ok) throw new Error('Failed to fetch availability');
+        const data = await res.json();
+        setAvailableUsers(data);
+      } catch (error) {
+        toast.error('Failed to load user availability');
+      }
+    };
+
+    fetchAvailability();
+  }, [start, end]);
 
   const handleSubmit = async () => {
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, start, end, userIds: selectedUsers }),
-    });
+    const toastId = toast.loading('Creating event...');
 
-    if (res.ok) {
-      const newEvent = await res.json();
-      setEvents([...events, newEvent]);
-      setShowModal(false);
-      setTitle('');
-      setStart('');
-      setEnd('');
-      setSelectedUsers([]);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, start, end, userIds: selectedUsers }),
+      });
+
+      if (res.ok) {
+        const newEvent = await res.json();
+        setEvents([...events, newEvent]);
+        setShowModal(false);
+        setTitle('');
+        setStart('');
+        setEnd('');
+        setSelectedUsers([]);
+        toast.success('Event created successfully!', { id: toastId });
+      } else {
+        throw new Error('Failed to create event');
+      }
+    } catch (error) {
+      toast.error('Failed to create event', { id: toastId });
     }
   };
 
@@ -109,29 +162,60 @@ export default function HomePage() {
   };
 
   const handleDeleteEvent = async (eventId: number) => {
-    console.log('Trying to delete event', eventId);
-    const proceed = window.confirm('Are you sure you want to delete this event?');
-    console.log('Confirmed:', proceed);
-    if (!proceed) return;
+    // Show confirmation toast
+    toast((t) => (
+      <div className="flex flex-col gap-2">
+        <p>Are you sure you want to delete this event?</p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              toast.error('Deletion cancelled');
+            }}
+            className="px-3 py-1 bg-gray-300 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const deleteToastId = toast.loading('Deleting event...');
 
-    const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
+              try {
+                const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
 
-    if (res.ok) {
-      setEvents(events.filter(e => e.id !== eventId));
-      setEventsForSelectedDate(eventsForSelectedDate.filter(e => e.id !== eventId));
-    }
+                if (res.ok) {
+                  setEvents(events.filter(e => e.id !== eventId));
+                  setEventsForSelectedDate(eventsForSelectedDate.filter(e => e.id !== eventId));
+                  toast.success('Event deleted successfully!', { id: deleteToastId });
+                } else {
+                  throw new Error('Failed to delete event');
+                }
+              } catch (error) {
+                toast.error('Failed to delete event', { id: deleteToastId });
+              }
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000, // Give user enough time to decide
+    });
   };
 
-const toLocalDateTimeString = (utcString: string | Date) => {
-  const date = new Date(utcString);
-  return date.toLocaleString([], {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+  const toLocalDateTimeString = (utcString: string | Date) => {
+    const date = new Date(utcString);
+    return date.toLocaleString([], {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
 
   return (
@@ -179,14 +263,14 @@ const toLocalDateTimeString = (utcString: string | Date) => {
               {users
                 .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
                 .map(user => {
-                 // const availability = getAvailabilityStatus(user.id);
+                  // const availability = getAvailabilityStatus(user.id);
                   return (
                     <button
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
                       className={`px-4 py-2 rounded flex flex-col items-start ${selectedUserId === user.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-300 dark:bg-zinc-700 dark:text-white'
                         }`}
                     >
                       <span>{user.name}</span>
@@ -217,22 +301,22 @@ const toLocalDateTimeString = (utcString: string | Date) => {
 
         </div>
 
-<div className="flex items-center space-x-2">
-  <button
-    onClick={() => router.push('/meetings')}
-    className="px-4 py-2 bg-green-600 text-white rounded"
-    title="View All Meetings"
-  >
-    View Meetings
-  </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => router.push('/meetings')}
+            className="px-4 py-2 bg-green-600 text-white rounded"
+            title="View All Meetings"
+          >
+            View Meetings
+          </button>
 
-  <button
-    onClick={() => setShowModal(true)}
-    className="px-4 py-2 bg-green-600 text-white rounded"
-  >
-    + Create Event
-  </button>
-</div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded"
+          >
+            + Create Event
+          </button>
+        </div>
 
 
 
@@ -358,44 +442,7 @@ const toLocalDateTimeString = (utcString: string | Date) => {
               })}
             </select>
             {/* Show Available Slots for Selected Users */}
-            {selectedUsers.length > 0 && (
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Available Slots:</label>
-                {availableUsers
-                  .filter(u => selectedUsers.includes(u.id))
-                  .map(user => (
-                    <div key={user.id} className="mb-2">
-                      <p className="font-semibold">{user.name}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(user.availableSlots) && user.availableSlots.length > 0 ? (
-                          user.availableSlots.map(slot => (
-                            <button
-                              key={slot.start}
-                              className="px-3 py-1 bg-green-200 hover:bg-green-300 text-sm rounded"
-                              onClick={() => {
-                                setStart(slot.start.slice(0, 16));
-                                setEnd(slot.end.slice(0, 16));
-                              }}
-                            >
-                              {new Date(slot.start).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}{' '}
-                              -{' '}
-                              {new Date(slot.end).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </button>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-500">No available slots</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
+            
 
             <div className="flex justify-between items-center gap-2">
 
@@ -427,8 +474,8 @@ const toLocalDateTimeString = (utcString: string | Date) => {
 
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
-<p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
-<p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+            <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+            <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
 
             <p><strong>Assigned to:</strong> {selectedEvent.assignedTo?.map(u => u.user?.name).join(', ') || '—'}</p>
 
@@ -478,11 +525,7 @@ const toLocalDateTimeString = (utcString: string | Date) => {
                   </button>
                   <button
                     className="px-3 py-1 bg-red-500 text-white rounded text-sm"
-
-                    onClick={() => {
-                      console.log('Delete clicked for event:', event.id);
-                      handleDeleteEvent(event.id)
-                    }}
+                    onClick={() => handleDeleteEvent(event.id)}
                   >
                     Delete
                   </button>
