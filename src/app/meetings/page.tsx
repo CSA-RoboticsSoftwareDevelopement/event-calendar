@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Trash2, ArrowLeft, FilePen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import { Dialog } from '@headlessui/react';
 
 type User = {
   id: number;
@@ -18,10 +20,12 @@ type Event = {
   end: string;
   assignedTo: {
     user: User;
+    userId: number; // Add this to match the data structure
   }[];
 };
 
 export default function EventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,12 +33,51 @@ export default function EventsPage() {
   const [filterValue, setFilterValue] = useState('all');
   const [nameFilter, setNameFilter] = useState('');
   const eventsPerPage = 15;
+  const [hasFetched, setHasFetched] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    start: '',
+    end: '',
+    assignedTo: [] as string[],
+  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
 
+  // Helpers for time conversion
+  const toUTCISOString = (localDateTime: string | Date) => {
+    const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
+    return new Date(localDateTime).toISOString();
+  };
+
+  const toLocalDateTimeString = (utcString: string | Date) => {
+    const date = new Date(utcString);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  // Fetch users for the edit modal dropdown
   useEffect(() => {
-    fetchEvents();
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        setUsers(data);
+      } catch (err) {
+        console.error('Failed to fetch users', err);
+      }
+    };
+    fetchUsers();
   }, []);
 
-  // Extract all unique designations from events
+  useEffect(() => {
+    if (!hasFetched) {
+      fetchEvents();
+      setHasFetched(true);
+    }
+  }, [hasFetched]);
+
   const getUniqueDesignations = () => {
     const designations = new Set<string>();
     events.forEach(event => {
@@ -47,40 +90,20 @@ export default function EventsPage() {
     return Array.from(designations);
   };
 
-  // Extract all unique names from events
-  const getUniqueNames = () => {
-    const names = new Set<string>();
-    events.forEach(event => {
-      event.assignedTo?.forEach(assignment => {
-        if (assignment.user.name) {
-          names.add(assignment.user.name);
-        }
-      });
-    });
-    return Array.from(names);
-  };
-
-  // Filter events based on search term, filter value, and name filter
   const filteredEvents = events.filter(event => {
-    const matchesSearch = 
+    const matchesSearch =
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.assignedTo?.some(a => 
+      event.assignedTo?.some(a =>
         a.user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-    const matchesFilter = 
-      filterValue === 'all' || 
-      event.assignedTo?.some(a => 
+    const matchesFilter =
+      filterValue === 'all' ||
+      event.assignedTo?.some(a =>
         a.user.designation?.toLowerCase() === filterValue.toLowerCase()
       );
 
-    const matchesName = 
-      nameFilter === '' ||
-      event.assignedTo?.some(a => 
-        a.user.name?.toLowerCase().includes(nameFilter.toLowerCase())
-      );
-
-    return matchesSearch && matchesFilter && matchesName;
+    return matchesSearch && matchesFilter;
   });
 
   const indexOfLastEvent = currentPage * eventsPerPage;
@@ -102,20 +125,19 @@ export default function EventsPage() {
       const res = await fetch('/api/events');
       const data = await res.json();
       setEvents(data);
-      toast.success('Events loaded successfully');
+      toast.success('Events loaded successfully', { id: 'events-loaded' });
     } catch (error) {
       console.error('Error fetching events:', error);
-      toast.error('Failed to load events');
+      toast.error('Failed to load events', { id: 'events-error' });
     } finally {
       setLoading(false);
     }
   };
 
   const deleteEvent = async (id: number) => {
-    // Enhanced confirmation dialog
     const confirmDelete = await new Promise((resolve) => {
       toast.custom((t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}
           max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
           <div className="flex-1 p-4">
             <div className="flex items-start">
@@ -177,17 +199,98 @@ export default function EventsPage() {
       loading: 'Deleting event...',
       success: (message) => message as string,
       error: (err) => err as string,
+    }, {
+      success: { duration: 2000 },
+      error: { duration: 2500 },
     });
+  };
+
+  const handleEditClick = (event: Event) => {
+    setCurrentEvent(event);
+    setFormData({
+      title: event.title,
+      start: toLocalDateTimeString(event.start),
+      end: toLocalDateTimeString(event.end),
+      assignedTo: event.assignedTo?.map(a => String(a.user.id)) || [],
+    });
+    setPendingRemovals([]);
+    setShowEditModal(true);
+  };
+
+  const handleRemoveAssignedUser = (userId: number) => {
+    const userIdStr = String(userId);
+    setPendingRemovals(prev => [...prev, userIdStr]);
+    setFormData(prev => ({
+      ...prev,
+      assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
+    }));
+    toast.success('User marked for removal. Changes will be saved when you click Save.');
+  };
+
+  const handleSave = async () => {
+    if (!currentEvent) return;
+    const toastId = toast.loading('Saving changes...');
+
+    try {
+      // First, process pending removals
+      if (pendingRemovals.length > 0) {
+        await Promise.all(
+          pendingRemovals.map(userId =>
+            fetch(`/api/events/${currentEvent.id}/assignments`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: Number(userId) }),
+            })
+          )
+        );
+      }
+
+      // Then, update the event with UTC times
+      const payload = {
+        title: formData.title,
+        start: toUTCISOString(formData.start),
+        end: toUTCISOString(formData.end),
+        assignedTo: formData.assignedTo.map(id => Number(id)),
+      };
+
+      const res = await fetch(`/api/events/${currentEvent.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setPendingRemovals([]);
+        setShowEditModal(false);
+        toast.success('Event updated successfully!', { id: toastId });
+        fetchEvents(); // Re-fetch events to update the table
+      } else {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Failed to update event');
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      toast.error(err instanceof Error ? err.message : 'Error saving changes. Please try again.', { id: toastId });
+    }
   };
 
   return (
     <div className="p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="rounded-xl shadow-md p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
-            View All Meeting Events 
-          </h2>
-          
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              title="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
+              View All Events
+            </h2>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
             <div className="relative">
@@ -200,7 +303,7 @@ export default function EventsPage() {
                 className="pl-10 pr-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white w-full"
               />
             </div>
-            
+
             {/* Designation Filter Dropdown */}
             <select
               value={filterValue}
@@ -270,13 +373,22 @@ export default function EventsPage() {
                         </div>
                       </td>
                       <td className="border px-4 py-3">
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          className="text-red-600 hover:text-red-800 flex items-center gap-1"
-                          title="Delete event"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditClick(event)}
+                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            title="Edit event"
+                          >
+                            <FilePen className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteEvent(event.id)}
+                            className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                            title="Delete event"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -318,6 +430,94 @@ export default function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal (Copied from agendaview.tsx) */}
+      {showEditModal && currentEvent && (
+        <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+          <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
+            <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
+
+            {pendingRemovals.length > 0 && (
+              <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
+                You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
+              </div>
+            )}
+
+            <div className="mt-4 space-y-4">
+              <input
+                className="w-full border px-3 py-2 rounded"
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Title"
+              />
+              <input
+                type="datetime-local"
+                className="w-full border px-3 py-2 rounded"
+                value={formData.start}
+                onChange={e => setFormData({ ...formData, start: e.target.value })}
+              />
+              <input
+                type="datetime-local"
+                className="w-full border px-3 py-2 rounded"
+                value={formData.end}
+                onChange={e => setFormData({ ...formData, end: e.target.value })}
+              />
+
+              {currentEvent.assignedTo?.length > 0 && (
+                <div className="mt-2 p-2 bg-gray-100 rounded">
+                  <p className="text-sm font-semibold">Currently Assigned:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {currentEvent.assignedTo
+                      .filter(assignment => !pendingRemovals.includes(String(assignment.userId)))
+                      .map((assignment, index) => (
+                        <li key={assignment.userId} className="flex items-center justify-between">
+                          <span>{assignment.user?.name || "Unknown"}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAssignedUser(assignment.userId);
+                            }}
+                            className="text-gray-500 hover:text-red-600"
+                            title="Remove user"
+                          >
+                            <X size={14} />
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              <select
+                multiple
+                className="w-full border px-3 py-2 rounded"
+                value={formData.assignedTo}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    assignedTo: Array.from(e.target.selectedOptions).map(o => o.value),
+                  })
+                }
+              >
+                {users.map(user => (
+                  <option
+                    key={user.id}
+                    value={user.id}
+                    className={formData.assignedTo.includes(user.id.toString()) ? "bg-blue-200 font-semibold" : ""}
+                  >
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end mt-4 gap-2">
+              <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleSave}>Save</button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
     </div>
   );
 }

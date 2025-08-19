@@ -13,8 +13,7 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 //import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 import toast from 'react-hot-toast';
-
-//import type { NextRequest } from 'next/server';
+import { Toaster } from 'react-hot-toast';
 
 const localizer = momentLocalizer(moment);
 
@@ -26,7 +25,8 @@ interface UserAvailability {
   availableSlots?: { start: string; end: string }[];
 }
 
-export default function HomePage() {
+// Main App component
+export default function App() {
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -34,6 +34,8 @@ export default function HomePage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
+  // New state for the event description
+  const [description, setDescription] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
@@ -41,18 +43,17 @@ export default function HomePage() {
   const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  //const [newUserName, setNewUserName] = useState('');
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const usersPerPage = 10;
 
-
-  // Refetch events function
+  // Refetch events function to refresh the calendar data
   const refetchEvents = () => {
     fetch('/api/events')
       .then(res => res.json())
-      .then((data: CalendarEvent[]) => setEvents([...data])); // always new array reference
+      .then((data: CalendarEvent[]) => setEvents([...data]));
   };
 
+  // Fetch initial events and users on component mount
   useEffect(() => {
     refetchEvents();
     fetch('/api/users')
@@ -60,6 +61,7 @@ export default function HomePage() {
       .then((data: User[]) => setUsers(data));
   }, []);
 
+  // Fetch user availability whenever start or end times change
   useEffect(() => {
     if (!start || !end) return;
 
@@ -67,50 +69,8 @@ export default function HomePage() {
       .then(res => res.json())
       .then((data: UserAvailability[]) => setAvailableUsers(data));
   }, [start, end]);
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch('/api/events');
-        if (!res.ok) throw new Error('Failed to fetch events');
-        const data = await res.json();
-        setEvents([...data]);
-      } catch (error) {
-        toast.error('Failed to load events');
-      }
-    };
 
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch('/api/users');
-        if (!res.ok) throw new Error('Failed to fetch users');
-        const data = await res.json();
-        setUsers(data);
-      } catch (error) {
-        toast.error('Failed to load users');
-      }
-    };
-
-    fetchEvents();
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    if (!start || !end) return;
-
-    const fetchAvailability = async () => {
-      try {
-        const res = await fetch(`/api/users/availability?start=${start}&end=${end}`);
-        if (!res.ok) throw new Error('Failed to fetch availability');
-        const data = await res.json();
-        setAvailableUsers(data);
-      } catch (error) {
-        toast.error('Failed to load user availability');
-      }
-    };
-
-    fetchAvailability();
-  }, [start, end]);
-
+  // Handle event creation submission
   const handleSubmit = async () => {
     const toastId = toast.loading('Creating event...');
 
@@ -124,6 +84,7 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
+          description, // Include the new description field
           start: startUTC,
           end: endUTC,
           userIds: selectedUsers,
@@ -135,6 +96,7 @@ export default function HomePage() {
         setEvents([...events, newEvent]);
         setShowModal(false);
         setTitle('');
+        setDescription(''); // Clear the description state
         setStart('');
         setEnd('');
         setSelectedUsers([]);
@@ -226,7 +188,6 @@ export default function HomePage() {
     });
   };
 
-
   return (
     <div
       className="p-10 min-h-screen"
@@ -235,6 +196,7 @@ export default function HomePage() {
         color: 'var(--foreground)',
       }}
     >
+      <Toaster position="bottom-right" />
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -272,7 +234,6 @@ export default function HomePage() {
               {users
                 .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
                 .map(user => {
-                  // const availability = getAvailabilityStatus(user.id);
                   return (
                     <button
                       key={user.id}
@@ -283,12 +244,6 @@ export default function HomePage() {
                         }`}
                     >
                       <span>{user.name}</span>
-                      {/* Optional: show availability below name */}
-                      {/* {availability && (
-              <span className="text-xs text-gray-800 dark:text-gray-300">
-                {availability}
-              </span>
-            )} */}
                     </button>
                   );
                 })}
@@ -307,7 +262,6 @@ export default function HomePage() {
               &gt;
             </button>
           </div>
-
         </div>
 
         <div className="flex items-center space-x-2">
@@ -326,9 +280,6 @@ export default function HomePage() {
             + Create Event
           </button>
         </div>
-
-
-
       </div>
 
       <div
@@ -338,7 +289,6 @@ export default function HomePage() {
           color: 'var(--foreground)',
         }}
       >
-
         <Calendar
           localizer={localizer}
           events={formattedEvents}
@@ -396,27 +346,51 @@ export default function HomePage() {
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
-            <h2 className="text-lg font-semibold mb-4"> User</h2>
+            <h2 className="text-lg font-semibold mb-4">Create Event</h2>
+            
+            {/* Input field for the event title with a label */}
+            <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
             <input
+              id="event-title"
               type="text"
-              placeholder="Title"
+              placeholder="Event Title"
               className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
+
+            {/* Input field for the event description with a label */}
+            <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              id="event-description"
+              placeholder="Event Description"
+              className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+            />
+
+            {/* Input field for the start time with a label */}
+            <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
             <input
+              id="event-start"
               type="datetime-local"
               className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
               value={start}
               onChange={e => setStart(e.target.value)}
             />
+
+            {/* Input field for the end time with a label */}
+            <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
             <input
+              id="event-end"
               type="datetime-local"
               className="w-full mb-4 p-2 rounded border dark:bg-zinc-700"
               value={end}
               onChange={e => setEnd(e.target.value)}
             />
 
+            {/* User assignment section with a label */}
             <label className="block mb-1 font-medium">Assign to (based on availability):</label>
             {availableUsers.length === 0 && (
               <p className="text-sm text-red-500 mb-2">Select start & end time to load users.</p>
@@ -450,28 +424,21 @@ export default function HomePage() {
                 );
               })}
             </select>
-            {/* Show Available Slots for Selected Users */}
             
-
-            <div className="flex justify-between items-center gap-2">
-
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-gray-400 rounded text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                >
-                  Create
-                </button>
-              </div>
+            <div className="flex justify-end items-center gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-400 rounded text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Create
+              </button>
             </div>
-
           </div>
         </div>
       )}
@@ -483,6 +450,8 @@ export default function HomePage() {
 
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
+            {/* Display the new description field */}
+            <p><strong>Description:</strong> {selectedEvent.description || '—'}</p>
             <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
             <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
 
@@ -512,6 +481,8 @@ export default function HomePage() {
             {eventsForSelectedDate.map((event) => (
               <div key={event.id} className="border-b py-2">
                 <p className="font-bold">{event.title}</p>
+                {/* Display the new description field in the daily events modal */}
+                <p className="text-sm">Description: {event.description || '—'}</p>
                 <p className="text-sm">
                   {new Date(event.start).toLocaleTimeString()} - {new Date(event.end).toLocaleTimeString()}
                 </p>

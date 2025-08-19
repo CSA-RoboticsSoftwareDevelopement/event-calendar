@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { FilePen } from "lucide-react"; // or PencilLine, SquarePen, etc.
+import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { FilePen } from "lucide-react";
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 type User = {
   id: number;
@@ -12,6 +14,7 @@ type User = {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -36,59 +39,159 @@ export default function UsersPage() {
   const handleSubmitUser = async () => {
     const { name, email, designation } = formData;
     if (!name || !email || !designation) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
+    }
+
+    if (editUserId) {
+      const shouldProceed = await new Promise((resolve) => {
+        const toastId = toast.custom(
+          (t) => (
+            <div className="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-xl">
+              <p className="text-gray-800 dark:text-gray-200">
+                Are you sure you want to update this user?
+              </p>
+              <div className="flex justify-end gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    resolve(false);
+                    toast.dismiss(toastId);
+                  }}
+                  className="px-3 py-1 bg-gray-200 dark:bg-zinc-700 rounded-md hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    resolve(true);
+                    toast.dismiss(toastId);
+                  }}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            position: 'top-center',
+          }
+        );
+      });
+
+      if (!shouldProceed) {
+        toast('Update canceled', { icon: '⚠️' });
+        return;
+      }
     }
 
     const method = editUserId ? 'PUT' : 'POST';
     const url = '/api/users';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: editUserId, name, email, designation }),
-    });
+    const toastId = toast.loading(editUserId ? 'Updating user...' : 'Adding user...');
 
-    if (res.ok) {
-      const updatedUser = await res.json();
-
-      setUsers(prev => {
-        if (editUserId) {
-          return prev.map(user => (user.id === editUserId ? updatedUser : user));
-        }
-        return [...prev, updatedUser];
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editUserId, name, email, designation }),
       });
 
-      setFormData({ name: '', email: '', designation: '' });
-      setEditUserId(null);
-      setShowModal(false);
-    } else {
-      alert(editUserId ? 'Failed to update user' : 'Failed to add user');
+      if (res.ok) {
+        const updatedUser = await res.json();
+
+        setUsers(prev => {
+          if (editUserId) {
+            return prev.map(user => (user.id === editUserId ? updatedUser : user));
+          }
+          return [...prev, updatedUser];
+        });
+
+        setFormData({ name: '', email: '', designation: '' });
+        setEditUserId(null);
+        setShowModal(false);
+
+        toast.success(editUserId ? 'User updated successfully!' : 'User added successfully!', { id: toastId });
+      } else {
+        throw new Error(editUserId ? 'Failed to update user' : 'Failed to add user');
+      }
+    } catch (error) {
+      toast.error(error.message, { id: toastId });
     }
   };
 
   const fetchUsers = async () => {
     setLoading(true);
-    const res = await fetch('/api/users');
-    const data = await res.json();
-    setUsers(data);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/users');
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      toast.error('Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteUser = async (id: number) => {
-    const confirm = window.confirm('Are you sure you want to delete this user?');
-    if (!confirm) return;
-
-    const res = await fetch('/api/users', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+    const userConfirmed = await new Promise((resolve) => {
+      const toastId = toast.custom(
+        (t) => (
+          <div className="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-xl">
+            <p className="text-gray-800 dark:text-gray-200">
+              Are you sure you want to delete this user?
+            </p>
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                onClick={() => {
+                  resolve(false);
+                  toast.dismiss(toastId);
+                }}
+                className="px-3 py-1 bg-gray-200 dark:bg-zinc-700 rounded-md hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  resolve(true);
+                  toast.dismiss(toastId);
+                }}
+                className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+          position: 'top-center',
+        }
+      );
     });
 
-    if (res.ok) {
-      setUsers(prev => prev.filter(user => user.id !== id));
-    } else {
-      alert('Failed to delete user.');
+    if (!userConfirmed) {
+      toast('Deletion canceled', { icon: '⚠️' });
+      return;
+    }
+
+    try {
+      const toastId = toast.loading('Deleting user...');
+      const res = await fetch('/api/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (res.ok) {
+        setUsers(prev => prev.filter(user => user.id !== id));
+        toast.success('User deleted successfully!', { id: toastId });
+      } else {
+        throw new Error('Failed to delete user.');
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
   };
 
@@ -108,15 +211,27 @@ export default function UsersPage() {
         }}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2
-            className="text-2xl font-bold flex items-center gap-2"
-            style={{ color: 'var(--foreground)' }}
-          >
-            User Table
-          </h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              title="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h2
+              className="text-2xl font-bold flex items-center gap-2"
+              style={{ color: 'var(--foreground)' }}
+            >
+              User Table
+            </h2>
+          </div>
           <button
             className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md shadow-md transition-colors"
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setShowModal(true);
+              toast.success('Ready to add new user!');
+            }}
           >
             + Add User
           </button>
@@ -159,9 +274,6 @@ export default function UsersPage() {
                       <td className="border px-4 py-3">{user.id}</td>
                       <td className="border px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {/* <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                            <UserCircle className="text-gray-500 w-5 h-5" />
-                          </div> */}
                           <span className="text-sm font-medium break-words max-w-xs">{user.name}</span>
                         </div>
                       </td>
@@ -178,6 +290,7 @@ export default function UsersPage() {
                                 designation: user.designation ?? '',
                               });
                               setShowModal(true);
+                              toast.success('Ready to edit user!');
                             }}
                             className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
                             title="Edit user"
@@ -208,12 +321,14 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Pagination */}
         {users.length > usersPerPage && (
           <div className="flex justify-end mt-6">
             <div className="flex gap-2 items-center">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => {
+                  setCurrentPage(prev => Math.max(prev - 1, 1));
+                  toast.success(`Navigated to page ${Math.max(currentPage - 1, 1)}`);
+                }}
                 disabled={currentPage === 1}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
@@ -226,7 +341,10 @@ export default function UsersPage() {
                 Page {currentPage} of {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() => {
+                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                  toast.success(`Navigated to page ${Math.min(currentPage + 1, totalPages)}`);
+                }}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
@@ -236,7 +354,6 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center z-50">
             <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -244,7 +361,7 @@ export default function UsersPage() {
                 className="text-lg font-semibold mb-4"
                 style={{ color: 'var(--foreground)' }}
               >
-                User
+                {editUserId ? 'Edit User' : 'Add New User'}
               </h3>
               <div className="space-y-4">
                 <input
@@ -277,6 +394,7 @@ export default function UsersPage() {
                   onClick={() => {
                     setShowModal(false);
                     setEditUserId(null);
+                    toast('Operation canceled', { icon: '⚠️' });
                   }}
                   className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
                 >
