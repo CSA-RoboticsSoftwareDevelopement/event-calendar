@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Trash2, ArrowLeft, FilePen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 import { Dialog } from '@headlessui/react';
 
+// Define the data types for users and events
 type User = {
   id: number;
   name: string;
@@ -13,25 +13,26 @@ type User = {
   designation: string;
 };
 
+// Added 'description' to the Event type
 type Event = {
   id: number;
   title: string;
   start: string;
   end: string;
+  description: string; // New field for the event description
   assignedTo: {
     user: User;
-    userId: number; // Add this to match the data structure
+    userId: number;
   }[];
 };
 
 export default function EventsPage() {
-  const router = useRouter();
+  // Initialize hooks and state variables
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValue, setFilterValue] = useState('all');
-  const [nameFilter, setNameFilter] = useState('');
   const eventsPerPage = 15;
   const [hasFetched, setHasFetched] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -40,24 +41,26 @@ export default function EventsPage() {
     title: '',
     start: '',
     end: '',
+    description: '', // New state for the description field
     assignedTo: [] as string[],
   });
   const [users, setUsers] = useState<User[]>([]);
   const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
 
-  // Helpers for time conversion
+  // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
     const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
     return new Date(localDateTime).toISOString();
   };
 
+  // Helper function to convert UTC ISO string to local date-time string for form input
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
-  // Fetch users for the edit modal dropdown
+  // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -71,6 +74,7 @@ export default function EventsPage() {
     fetchUsers();
   }, []);
 
+  // Fetch events when the component first mounts
   useEffect(() => {
     if (!hasFetched) {
       fetchEvents();
@@ -78,47 +82,7 @@ export default function EventsPage() {
     }
   }, [hasFetched]);
 
-  const getUniqueDesignations = () => {
-    const designations = new Set<string>();
-    events.forEach(event => {
-      event.assignedTo?.forEach(assignment => {
-        if (assignment.user.designation) {
-          designations.add(assignment.user.designation);
-        }
-      });
-    });
-    return Array.from(designations);
-  };
-
-  const filteredEvents = events.filter(event => {
-    const matchesSearch =
-      event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.assignedTo?.some(a =>
-        a.user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-    const matchesFilter =
-      filterValue === 'all' ||
-      event.assignedTo?.some(a =>
-        a.user.designation?.toLowerCase() === filterValue.toLowerCase()
-      );
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filteredEvents.slice(indexOfFirstEvent, indexOfLastEvent);
-  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
+  // Fetches event data from the API
   const fetchEvents = async () => {
     setLoading(true);
     try {
@@ -134,6 +98,53 @@ export default function EventsPage() {
     }
   };
 
+  // Gets a list of unique designations for the filter dropdown
+  const getUniqueDesignations = () => {
+    const designations = new Set<string>();
+    events.forEach(event => {
+      event.assignedTo?.forEach(assignment => {
+        if (assignment.user.designation) {
+          designations.add(assignment.user.designation);
+        }
+      });
+    });
+    return Array.from(designations);
+  };
+
+  // Filters events based on search term and designation filter
+  const filteredEvents = events.filter(event => {
+    const matchesSearch =
+      event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description?.toLowerCase().includes(searchTerm.toLowerCase()) || // Added description to search
+      event.assignedTo?.some(a =>
+        a.user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+    const matchesFilter =
+      filterValue === 'all' ||
+      event.assignedTo?.some(a =>
+        a.user.designation?.toLowerCase() === filterValue.toLowerCase()
+      );
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // Pagination logic
+  const indexOfLastEvent = currentPage * eventsPerPage;
+  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
+  const currentEvents = filteredEvents.slice(indexOfFirstEvent, indexOfLastEvent);
+  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+
+  // Formatting helpers for date and time display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Handles event deletion with a confirmation toast
   const deleteEvent = async (id: number) => {
     const confirmDelete = await new Promise((resolve) => {
       toast.custom((t) => (
@@ -205,18 +216,21 @@ export default function EventsPage() {
     });
   };
 
+  // Prepares the edit modal with the selected event's data
   const handleEditClick = (event: Event) => {
     setCurrentEvent(event);
     setFormData({
       title: event.title,
       start: toLocalDateTimeString(event.start),
       end: toLocalDateTimeString(event.end),
+      description: event.description, // Set the description in the form data
       assignedTo: event.assignedTo?.map(a => String(a.user.id)) || [],
     });
     setPendingRemovals([]);
     setShowEditModal(true);
   };
 
+  // Handles marking a user for removal, which is finalized on save
   const handleRemoveAssignedUser = (userId: number) => {
     const userIdStr = String(userId);
     setPendingRemovals(prev => [...prev, userIdStr]);
@@ -227,6 +241,7 @@ export default function EventsPage() {
     toast.success('User marked for removal. Changes will be saved when you click Save.');
   };
 
+  // Handles saving the updated event data
   const handleSave = async () => {
     if (!currentEvent) return;
     const toastId = toast.loading('Saving changes...');
@@ -245,9 +260,10 @@ export default function EventsPage() {
         );
       }
 
-      // Then, update the event with UTC times
+      // Then, update the event with UTC times and the new description
       const payload = {
         title: formData.title,
+        description: formData.description, // Include description in the payload
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
         assignedTo: formData.assignedTo.map(id => Number(id)),
@@ -280,7 +296,7 @@ export default function EventsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={() => window.history.back()}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               title="Go back"
             >
@@ -332,6 +348,7 @@ export default function EventsPage() {
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Date</th>
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Time</th>
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Event</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Description</th> {/* New Description column */}
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Assigned To</th>
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Designation</th>
                     <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Action</th>
@@ -353,6 +370,9 @@ export default function EventsPage() {
                       </td>
                       <td className="border px-4 py-3 font-medium">
                         {event.title}
+                      </td>
+                      <td className="border px-4 py-3 break-words max-w-xs">
+                        {event.description} {/* Display the description */}
                       </td>
                       <td className="border px-4 py-3 break-words max-w-xs">
                         <div className="flex flex-col gap-1">
@@ -394,7 +414,7 @@ export default function EventsPage() {
                   ))}
                   {filteredEvents.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="text-center py-6 text-gray-500">
+                      <td colSpan={8} className="text-center py-6 text-gray-500">
                         No events found matching your criteria.
                       </td>
                     </tr>
@@ -461,6 +481,12 @@ export default function EventsPage() {
                 className="w-full border px-3 py-2 rounded"
                 value={formData.end}
                 onChange={e => setFormData({ ...formData, end: e.target.value })}
+              />
+              <textarea
+                className="w-full border px-3 py-2 rounded min-h-[100px]" // Added textarea for a larger input area
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description"
               />
 
               {currentEvent.assignedTo?.length > 0 && (

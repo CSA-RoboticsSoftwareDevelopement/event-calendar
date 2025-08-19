@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { CalendarEvent } from '@/src/types/Event';
 import { Trash2, FilePen, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
@@ -7,6 +6,16 @@ import toast from 'react-hot-toast';
 interface User {
   id: string | number;
   name: string;
+}
+
+// Assumed type definition based on the data structure
+interface CalendarEvent {
+  id: string | number;
+  title: string;
+  description: string; // Added description field
+  start: string | Date;
+  end: string | Date;
+  assignedTo?: { userId?: string | number; user?: User }[];
 }
 
 export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEvent, onEventChanged?: () => void }) => {
@@ -26,8 +35,10 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
+  // State to manage form data for editing, including the new description field.
   const [formData, setFormData] = useState({
     title: event.title,
+    description: event.description, // Initializing with the event's description
     start: event.start,
     end: event.end,
     assignedTo: event.assignedTo?.map(a => a.user?.id?.toString()) || [],
@@ -138,6 +149,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       // Then update the event with UTC times
       const payload = {
         ...formData,
+        // Added the description to the payload
+        description: formData.description,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
         assignedTo: formData.assignedTo.map(id => Number(id)),
@@ -165,17 +178,22 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   };
 
   return (
-    <div className="flex justify-between items-center">
-      <div>
-        <strong>{event.title}</strong>
-        <br />
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+      <div className="flex-1 min-w-0">
+        <strong className="block truncate">{event.title}</strong>
+        {/* Display the description on the main event card */}
+        {event.description && (
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 truncate">
+            {event.description}
+          </p>
+        )}
+        <span className="text-sm text-gray-600 dark:text-gray-400 mt-1 block">
           Assigned to:{' '}
           {event.assignedTo?.map(u => u.user?.name).filter(Boolean).join(', ') || '—'}
         </span>
       </div>
 
-      <div className="flex items-center gap-2 ml-4">
+      <div className="flex-shrink-0 flex items-center gap-2 mt-2 md:mt-0 md:ml-4">
         <span title="Modify">
           <FilePen
             className="w-4 h-4 text-blue-600 cursor-pointer"
@@ -187,7 +205,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </span>
 
         <span title="Delete">
-
           <Trash2
             className="w-4 h-4 text-red-600 cursor-pointer"
             onClick={(e) => {
@@ -195,8 +212,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
               handleDeleteConfirmation(); // Directly show toast confirmation
             }}
           />
-
-
         </span>
       </div>
 
@@ -242,10 +257,19 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
             <div className="mt-4 space-y-4">
               <input
+                type="text"
                 className="w-full border px-3 py-2 rounded"
                 value={formData.title}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Title"
+              />
+              {/* Added a textarea for the event description */}
+              <textarea
+                className="w-full border px-3 py-2 rounded resize-y"
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description"
+                rows={3}
               />
               <input
                 type="datetime-local"
