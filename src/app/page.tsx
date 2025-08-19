@@ -347,7 +347,7 @@ export default function App() {
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
             <h2 className="text-lg font-semibold mb-4">Create Event</h2>
-            
+
             {/* Input field for the event title with a label */}
             <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
             <input
@@ -424,7 +424,7 @@ export default function App() {
                 );
               })}
             </select>
-            
+
             <div className="flex justify-end items-center gap-2">
               <button
                 onClick={() => setShowModal(false)}

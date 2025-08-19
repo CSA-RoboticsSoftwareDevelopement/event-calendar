@@ -1,5 +1,5 @@
-import { prisma } from '@/src/lib/prisma';
-import { NextResponse } from 'next/server';
+import { prisma } from "@/src/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const events = await prisma.event.findMany({
@@ -25,21 +25,21 @@ export async function GET() {
   //     },
   //   })),
   // }));
-// Inside GET
-const formatted = events.map(event => ({
-  id: event.id,
-  title: event.title,
-  start: event.start.toISOString(),
-  end: event.end.toISOString(),
-  assignedTo: event.assignments.map(a => ({
-    userId: a.userId,
-    user: {
-      name: a.user.name,
-      email: a.user.email,           // optional
-      designation: a.user.designation,  // ✅ include this
-    },
-  })),
-}));
+  // Inside GET
+  const formatted = events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    start: event.start.toISOString(),
+    end: event.end.toISOString(),
+    assignedTo: event.assignments.map((a) => ({
+      userId: a.userId,
+      user: {
+        name: a.user.name,
+        email: a.user.email, // optional
+        designation: a.user.designation, // ✅ include this
+      },
+    })),
+  }));
 
   return NextResponse.json(formatted);
 }
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
           user: { connect: { id } },
         })),
       },
+      description: body.description,
     },
     include: {
       assignments: {
@@ -69,21 +70,20 @@ export async function POST(req: Request) {
   });
 
   // Always send UTC strings back
-const formatted = {
-  id: event.id,
-  title: event.title,
-  start: event.start.toISOString(),
-  end: event.end.toISOString(),
-  assignedTo: event.assignments.map(a => ({
-    userId: a.userId,
-    user: {
-      name: a.user.name,
-      email: a.user.email,           // optional
-      designation: a.user.designation,  // ✅ include this
-    },
-  })),
-};
-
+  const formatted = {
+    id: event.id,
+    title: event.title,
+    start: event.start.toISOString(),
+    end: event.end.toISOString(),
+    assignedTo: event.assignments.map((a) => ({
+      userId: a.userId,
+      user: {
+        name: a.user.name,
+        email: a.user.email, // optional
+        designation: a.user.designation, // ✅ include this
+      },
+    })),
+  };
 
   return NextResponse.json(formatted);
 }
