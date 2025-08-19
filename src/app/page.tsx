@@ -115,10 +115,19 @@ export default function HomePage() {
     const toastId = toast.loading('Creating event...');
 
     try {
+      // Convert local time to UTC ISO string
+      const startUTC = new Date(start).toISOString();
+      const endUTC = new Date(end).toISOString();
+
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, start, end, userIds: selectedUsers }),
+        body: JSON.stringify({
+          title,
+          start: startUTC,
+          end: endUTC,
+          userIds: selectedUsers,
+        }),
       });
 
       if (res.ok) {

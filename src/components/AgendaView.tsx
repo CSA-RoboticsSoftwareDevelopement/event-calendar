@@ -84,7 +84,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                     throw new Error('Failed to delete event');
                   }
                 } catch (err) {
-                  toast.error(err.message || 'Failed to delete event', { id: deleteToastId });
+                  toast.error(err instanceof Error ? err.message : 'Failed to delete event', { id: deleteToastId });
                   console.error('Error deleting event:', err);
                 }
               }}
@@ -160,7 +160,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       }
     } catch (err) {
       console.error('Update error:', err);
-      toast.error(err.message || 'Error saving changes. Please try again.', { id: toastId });
+      toast.error(err instanceof Error ? err.message : 'Error saving changes. Please try again.', { id: toastId });
     }
   };
 
@@ -187,7 +187,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </span>
 
         <span title="Delete">
-          
+
           <Trash2
             className="w-4 h-4 text-red-600 cursor-pointer"
             onClick={(e) => {
