@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import React from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css'; // optional CSS
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -38,13 +40,13 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [theme]);
 
   return (
-      <div
-        className="transition-colors duration-300 min-h-screen"
-        style={{
-          background: 'var(--background)',
-          color: 'var(--foreground)',
-        }}
-      >
+    <div
+      className="transition-colors duration-300 min-h-screen"
+      style={{
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+      }}
+    >
       <header
         className="p-4 flex justify-between items-center"
         style={{
@@ -54,21 +56,28 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       >
         <h1 className="text-xl font-bold">📅 CSA Events</h1>
         <div className="flex items-center gap-2">
-<button
-  onClick={() => router.push('/users')}
-  className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700"
-  title="User Settings"
->
-  <SlidersHorizontal className="w-5 h-5" />
-</button>
+          <Tippy content="User Settings">
+            <button
+              onClick={() => router.push('/users')}
+              className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700"
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
+          </Tippy>
 
 
-          <button
-            onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}
-            className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700"
-          >
-            {theme === 'light' ? '🌙 ' : '☀️ '}
-          </button>
+          <Tippy content="Dark mode will be available soon">
+            <span className="inline-block">
+              <button
+                onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}
+                className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700 cursor-not-allowed opacity-50"
+                disabled
+              >
+                {theme === 'light' ? '🌙 ' : '☀️ '}
+              </button>
+            </span>
+          </Tippy>
+
         </div>
       </header>
       <main

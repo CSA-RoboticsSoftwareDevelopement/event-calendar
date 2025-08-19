@@ -242,11 +242,57 @@ export default function EventsPage() {
   };
 
   // Handles saving the updated event data
+  // Handles saving the updated event data
   const handleSave = async () => {
     if (!currentEvent) return;
+
+    // Add confirmation dialog
+    const confirmUpdate = await new Promise((resolve) => {
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}
+        max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+          <div className="flex-1 p-4">
+            <div className="flex items-start">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Confirm Update
+                </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Are you sure you want to update this event?
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex space-x-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(false);
+                }}
+                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-transparent focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(true);
+                }}
+                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md border border-transparent focus:outline-none"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      ), { duration: Infinity });
+    });
+
+    if (!confirmUpdate) return;
+
     const toastId = toast.loading('Saving changes...');
 
     try {
+      // Rest of your existing code remains the same...
       // First, process pending removals
       if (pendingRemovals.length > 0) {
         await Promise.all(
@@ -263,7 +309,7 @@ export default function EventsPage() {
       // Then, update the event with UTC times and the new description
       const payload = {
         title: formData.title,
-        description: formData.description, // Include description in the payload
+        description: formData.description,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
         assignedTo: formData.assignedTo.map(id => Number(id)),
@@ -279,7 +325,7 @@ export default function EventsPage() {
         setPendingRemovals([]);
         setShowEditModal(false);
         toast.success('Event updated successfully!', { id: toastId });
-        fetchEvents(); // Re-fetch events to update the table
+        fetchEvents();
       } else {
         const errorText = await res.text();
         throw new Error(errorText || 'Failed to update event');
@@ -289,7 +335,6 @@ export default function EventsPage() {
       toast.error(err instanceof Error ? err.message : 'Error saving changes. Please try again.', { id: toastId });
     }
   };
-
   return (
     <div className="p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="rounded-xl shadow-md p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>

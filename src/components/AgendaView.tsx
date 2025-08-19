@@ -12,7 +12,7 @@ interface User {
 interface CalendarEvent {
   id: string | number;
   title: string;
-  description: string; // Added description field
+  description?: string; // make optional
   start: string | Date;
   end: string | Date;
   assignedTo?: { userId?: string | number; user?: User }[];
@@ -284,7 +284,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 onChange={e => setFormData({ ...formData, end: e.target.value })}
               />
 
-              {event.assignedTo?.length > 0 && (
+              {event.assignedTo && event.assignedTo.length > 0 && (
                 <div className="mt-2 p-2 bg-gray-100 rounded">
                   <p className="text-sm font-semibold">Currently Assigned:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
@@ -309,27 +309,31 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 </div>
               )}
 
+
               <select
                 multiple
                 className="w-full border px-3 py-2 rounded"
-                value={formData.assignedTo}
+                value={formData.assignedTo as string[]} // assert as string[]
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    assignedTo: Array.from(e.target.selectedOptions).map(o => o.value),
+                    assignedTo: Array.from(e.target.selectedOptions)
+                      .map(o => o.value)
+                      .filter((v): v is string => v !== undefined), // remove undefined
                   })
                 }
               >
                 {users.map(user => (
                   <option
                     key={user.id}
-                    value={user.id}
+                    value={user.id.toString()}
                     className={formData.assignedTo.includes(user.id.toString()) ? "bg-blue-200 font-semibold" : ""}
                   >
                     {user.name}
                   </option>
                 ))}
               </select>
+
             </div>
 
             <div className="flex justify-end mt-4 gap-2">

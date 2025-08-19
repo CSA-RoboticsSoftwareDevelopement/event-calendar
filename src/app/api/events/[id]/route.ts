@@ -1,5 +1,5 @@
-import type { NextRequest } from 'next/server';
-import { prisma } from '../../../../lib/prisma'; // Ensure prisma client is imported
+import type { NextRequest } from "next/server";
+import { prisma } from "../../../../lib/prisma"; // Ensure prisma client is imported
 export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -8,7 +8,7 @@ export async function DELETE(
   const eventId = parseInt(id, 10);
 
   if (isNaN(eventId)) {
-    return Response.json({ error: 'Invalid ID' }, { status: 400 });
+    return Response.json({ error: "Invalid ID" }, { status: 400 });
   }
 
   try {
@@ -22,15 +22,15 @@ export async function DELETE(
       where: { id: eventId },
     });
 
-    return Response.json({ message: 'Event deleted successfully' });
+    return Response.json({ message: "Event deleted successfully" });
   } catch (err: unknown) {
-    console.error('Delete error:', err);
+    console.error("Delete error:", err);
 
     if (err instanceof Error) {
       return Response.json({ error: err.message }, { status: 500 });
     }
 
-    return Response.json({ error: 'Failed to delete event' }, { status: 500 });
+    return Response.json({ error: "Failed to delete event" }, { status: 500 });
   }
 }
 export async function PUT(
@@ -41,17 +41,18 @@ export async function PUT(
   const eventId = parseInt(id, 10);
 
   if (isNaN(eventId)) {
-    return Response.json({ error: 'Invalid ID' }, { status: 400 });
+    return Response.json({ error: "Invalid ID" }, { status: 400 });
   }
 
   try {
     const body = await req.json();
-    const { title, start, end, assignedTo } = body;
+    const { title, description, start, end, assignedTo } = body;
 
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },
       data: {
         title,
+        description, // <-- add this line
         start: new Date(start),
         end: new Date(end),
       },
@@ -72,14 +73,13 @@ export async function PUT(
     }
 
     return Response.json(updatedEvent);
-  }catch (err: unknown) {
-  console.error('Update error:', err);
+  } catch (err: unknown) {
+    console.error("Update error:", err);
 
-  if (err instanceof Error) {
-    return Response.json({ error: err.message }, { status: 500 });
+    if (err instanceof Error) {
+      return Response.json({ error: err.message }, { status: 500 });
+    }
+
+    return Response.json({ error: "Failed to update event" }, { status: 500 });
   }
-
-  return Response.json({ error: 'Failed to update event' }, { status: 500 });
-}
-
 }

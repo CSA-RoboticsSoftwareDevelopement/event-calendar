@@ -116,9 +116,14 @@ export default function UsersPage() {
       } else {
         throw new Error(editUserId ? 'Failed to update user' : 'Failed to add user');
       }
-    } catch (error) {
-      toast.error(error.message, { id: toastId });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message, { id: toastId });
+      } else {
+        toast.error("An unexpected error occurred", { id: toastId });
+      }
     }
+
   };
 
   const fetchUsers = async () => {
@@ -190,9 +195,14 @@ export default function UsersPage() {
       } else {
         throw new Error('Failed to delete user.');
       }
-    } catch (error) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unexpected error occurred");
+      }
     }
+
   };
 
   return (

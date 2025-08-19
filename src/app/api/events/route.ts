@@ -20,7 +20,7 @@ export async function GET() {
     const formattedEvents = events.map((event) => ({
       id: event.id,
       title: event.title,
-      description: event.description, // ✅ FIX: Include the description
+      description: event.description ?? "", // ensure description is always a string
       start: event.start.toISOString(), // Convert to ISO UTC string
       end: event.end.toISOString(), // Convert to ISO UTC string
       assignedTo: event.assignments.map((a) => ({
@@ -37,7 +37,10 @@ export async function GET() {
     return NextResponse.json(formattedEvents);
   } catch (error) {
     console.error("Failed to fetch events:", error);
-    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
   }
 }
 
@@ -89,7 +92,10 @@ export async function POST(req: Request) {
     return NextResponse.json(formattedEvent, { status: 201 });
   } catch (error) {
     console.error("Failed to create event:", error);
-    return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
   }
 }
 
@@ -97,14 +103,14 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const eventId = parseInt(url.pathname.split('/').pop() || '', 10);
+    const eventId = parseInt(url.pathname.split("/").pop() || "", 10);
 
     if (isNaN(eventId)) {
-      return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
     // First, delete related assignments
-    await prisma.assignment.deleteMany({
+    await prisma.eventAssignment.deleteMany({
       where: { eventId },
     });
 
@@ -113,9 +119,15 @@ export async function DELETE(req: Request) {
       where: { id: eventId },
     });
 
-    return NextResponse.json({ message: 'Event deleted successfully' }, { status: 200 });
+    return NextResponse.json(
+      { message: "Event deleted successfully" },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Failed to delete event:', error);
-    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
+    console.error("Failed to delete event:", error);
+    return NextResponse.json(
+      { error: "Failed to delete event" },
+      { status: 500 }
+    );
   }
 }
