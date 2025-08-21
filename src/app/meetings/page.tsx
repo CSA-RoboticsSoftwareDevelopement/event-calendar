@@ -46,6 +46,9 @@ export default function EventsPage() {
   });
   const [users, setUsers] = useState<User[]>([]);
   const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -89,7 +92,6 @@ export default function EventsPage() {
       const res = await fetch('/api/events');
       const data = await res.json();
       setEvents(data);
-      toast.success('Events loaded successfully', { id: 'events-loaded' });
     } catch (error) {
       console.error('Error fetching events:', error);
       toast.error('Failed to load events', { id: 'events-error' });
@@ -146,75 +148,22 @@ export default function EventsPage() {
 
   // Handles event deletion with a confirmation toast
   const deleteEvent = async (id: number) => {
-    const confirmDelete = await new Promise((resolve) => {
-      toast.custom((t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}
-          max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-          <div className="flex-1 p-4">
-            <div className="flex items-start">
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Confirm Deletion
-                </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Are you sure you want to delete this event? This action cannot be undone.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex space-x-2">
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(false);
-                }}
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-transparent focus:outline-none"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(true);
-                }}
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-md border border-transparent focus:outline-none"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      ), { duration: Infinity });
-    });
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
 
-    if (!confirmDelete) return;
-
-    const deletePromise = new Promise(async (resolve, reject) => {
-      try {
-        const res = await fetch(`/api/events/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (res.ok) {
-          setEvents(prev => prev.filter(event => event.id !== id));
-          resolve('Event deleted successfully');
-        } else {
-          reject('Failed to delete event');
-        }
-      } catch (error) {
-        console.error('Error deleting event:', error);
-        reject('Error deleting event');
+      if (res.ok) {
+        setEvents(prev => prev.filter(event => event.id !== id));
+        toast.success('Event deleted successfully', { duration: 2000 });
+      } else {
+        toast.error('Failed to delete event', { duration: 2500 });
       }
-    });
-
-    toast.promise(deletePromise, {
-      loading: 'Deleting event...',
-      success: (message) => message as string,
-      error: (err) => err as string,
-    }, {
-      success: { duration: 2000 },
-      error: { duration: 2500 },
-    });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.error('Error deleting event', { duration: 2500 });
+    }
   };
+
+
 
   // Prepares the edit modal with the selected event's data
   const handleEditClick = (event: Event) => {
@@ -238,56 +187,12 @@ export default function EventsPage() {
       ...prev,
       assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
     }));
-    toast.success('User marked for removal. Changes will be saved when you click Save.');
   };
 
   // Handles saving the updated event data
-  // Handles saving the updated event data
-  const handleSave = async () => {
+  // Handles saving the updated event daa
+  const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
-
-    // Add confirmation dialog
-    const confirmUpdate = await new Promise((resolve) => {
-      toast.custom((t) => (
-        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'}
-        max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-          <div className="flex-1 p-4">
-            <div className="flex items-start">
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Confirm Update
-                </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Are you sure you want to update this event?
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex space-x-2">
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(false);
-                }}
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-transparent focus:outline-none"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(true);
-                }}
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md border border-transparent focus:outline-none"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      ), { duration: Infinity });
-    });
-
-    if (!confirmUpdate) return;
 
     const toastId = toast.loading('Saving changes...');
 
@@ -336,17 +241,28 @@ export default function EventsPage() {
     }
   };
   return (
+
     <div className="p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+
       <div className="rounded-xl shadow-md p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => {
+                if (document.referrer) {
+                  // Go back to the previous page if there is one
+                  window.location.href = document.referrer;
+                } else {
+                  // Fallback: go to homepage
+                  window.location.href = '/';
+                }
+              }}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               title="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
+
             <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
               View All Events
             </h2>
@@ -447,8 +363,10 @@ export default function EventsPage() {
                             <FilePen className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => deleteEvent(event.id)}
-                            className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                            onClick={() => {
+                              setEventToDelete(event);
+                              setShowDeleteModal(true);
+                            }} className="text-red-600 hover:text-red-800 flex items-center gap-1"
                             title="Delete event"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -509,30 +427,39 @@ export default function EventsPage() {
             )}
 
             <div className="mt-4 space-y-4">
+              <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
+
               <input
                 className="w-full border px-3 py-2 rounded"
                 value={formData.title}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Title"
               />
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={formData.start}
-                onChange={e => setFormData({ ...formData, start: e.target.value })}
-              />
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={formData.end}
-                onChange={e => setFormData({ ...formData, end: e.target.value })}
-              />
+              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
               <textarea
                 className="w-full border px-3 py-2 rounded min-h-[100px]" // Added textarea for a larger input area
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Description"
               />
+              <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+
+              <input
+                type="datetime-local"
+                className="w-full border px-3 py-2 rounded"
+                value={formData.start}
+                onChange={e => setFormData({ ...formData, start: e.target.value })}
+              />
+              <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+
+              <input
+                type="datetime-local"
+                className="w-full border px-3 py-2 rounded"
+                value={formData.end}
+                onChange={e => setFormData({ ...formData, end: e.target.value })}
+              />
+              <label className="block mb-1 font-medium">Assign to </label>
+
 
               {currentEvent.assignedTo?.length > 0 && (
                 <div className="mt-2 p-2 bg-gray-100 rounded">
@@ -563,12 +490,14 @@ export default function EventsPage() {
                 multiple
                 className="w-full border px-3 py-2 rounded"
                 value={formData.assignedTo}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const newSelected = Array.from(e.target.selectedOptions).map(o => o.value);
+                  // Append new selections without removing existing ones
                   setFormData({
                     ...formData,
-                    assignedTo: Array.from(e.target.selectedOptions).map(o => o.value),
-                  })
-                }
+                    assignedTo: Array.from(new Set([...formData.assignedTo, ...newSelected])),
+                  });
+                }}
               >
                 {users.map(user => (
                   <option
@@ -580,15 +509,81 @@ export default function EventsPage() {
                   </option>
                 ))}
               </select>
+
             </div>
 
             <div className="flex justify-end mt-4 gap-2">
               <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleSave}>Save</button>
+              <button
+                type="button"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+                onClick={() => setShowSaveModal(true)}
+              >
+                Save
+              </button>
             </div>
           </Dialog.Panel>
         </Dialog>
       )}
+      {showSaveModal && currentEvent && (
+        <Dialog open={showSaveModal} onClose={() => setShowSaveModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+          <Dialog.Panel className="bg-white rounded p-6 w-[400px]">
+            <Dialog.Title className="text-lg font-semibold">Confirm Save</Dialog.Title>
+            <p className="mt-2 text-sm text-gray-600">
+              Are you sure you want to save changes to <span className="font-medium">{currentEvent.title}</span>?
+            </p>
+
+            <div className="flex justify-end mt-4 gap-2">
+              <button
+                className="bg-gray-200 px-4 py-2 rounded"
+                onClick={() => setShowSaveModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  handleSave(currentEvent);
+                  setShowSaveModal(false);
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
+      {showDeleteModal && eventToDelete && (
+        <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+          <Dialog.Panel className="bg-white rounded p-6 w-[400px]">
+            <Dialog.Title className="text-lg font-semibold">Confirm Deletion</Dialog.Title>
+            <p className="mt-2 text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-medium">{eventToDelete.title}</span>?
+            </p>
+
+            <div className="flex justify-end mt-4 gap-2">
+              <button
+                className="bg-gray-200 px-4 py-2 rounded"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  if (eventToDelete) deleteEvent(eventToDelete.id);
+                  setShowDeleteModal(false);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
+
     </div>
   );
 }

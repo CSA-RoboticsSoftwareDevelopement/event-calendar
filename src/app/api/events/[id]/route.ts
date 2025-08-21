@@ -63,13 +63,10 @@ export async function PUT(
         .map((id) => parseInt(id, 10))
         .filter((id) => !isNaN(id));
 
-      await Promise.all(
-        validIds.map((userId) =>
-          prisma.eventAssignment.create({
-            data: { eventId, userId },
-          })
-        )
-      );
+      await prisma.eventAssignment.createMany({
+        data: validIds.map((userId) => ({ eventId, userId })),
+        skipDuplicates: true, // ← avoids unique constraint errors
+      });
     }
 
     return Response.json(updatedEvent);

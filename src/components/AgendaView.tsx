@@ -12,16 +12,17 @@ interface User {
 interface CalendarEvent {
   id: string | number;
   title: string;
-  description?: string; // make optional
+  description?: string;
   start: string | Date;
   end: string | Date;
-  assignedTo?: { userId?: string | number; user?: User }[];
+  assignedTo: { user?: User; userId?: string | number }[]; // <-- adjust type
 }
 
 export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEvent, onEventChanged?: () => void }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
 
   // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -41,8 +42,20 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     description: event.description, // Initializing with the event's description
     start: event.start,
     end: event.end,
-    assignedTo: event.assignedTo?.map(a => a.user?.id?.toString()) || [],
+    assignedTo: [] as string[], // Explicitly type as string array
   });
+
+  useEffect(() => {
+    const assignedIds = event.assignedTo
+      ?.map(a => a.user?.id ?? a.userId)
+      .filter(Boolean)
+      .map(String) || [];
+
+    setFormData(prev => ({
+      ...prev,
+      assignedTo: assignedIds,
+    }));
+  }, [event]);
 
   const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
 
@@ -74,7 +87,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             <button
               onClick={() => {
                 toast.dismiss(t.id);
-                toast.error('Deletion cancelled');
               }}
               className="px-3 py-1.5 text-sm rounded-md bg-gray-200 hover:bg-gray-300"
             >
@@ -106,25 +118,21 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           </div>
         </div>
       </div>
-    ), {
-      duration: 10000,
-      position: 'bottom-right',
-    });
+    ));
   };
-
   const handleRemoveAssignedUser = (userId?: string | number) => {
-    if (userId === undefined || userId === null) {
-      console.error('Invalid user ID:', userId);
-      toast.error('Cannot remove user: Invalid user ID');
-      return;
-    }
+    if (!userId) return;
 
     const userIdStr = String(userId);
-    setPendingRemovals(prev => [...prev, userIdStr]);
+
+    // Optimistically remove from formData for instant UI reflection
     setFormData(prev => ({
       ...prev,
-      assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
+      assignedTo: prev.assignedTo.filter(id => id !== userIdStr),
     }));
+
+    // Track pending removals for API
+    setPendingRemovals(prev => [...prev, userIdStr]);
 
     toast.success('User marked for removal. Changes will be saved when you click Save.');
   };
@@ -256,6 +264,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             )}
 
             <div className="mt-4 space-y-4">
+              <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
+
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded"
@@ -264,6 +274,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 placeholder="Title"
               />
               {/* Added a textarea for the event description */}
+              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
+
               <textarea
                 className="w-full border px-3 py-2 rounded resize-y"
                 value={formData.description}
@@ -271,32 +283,40 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 placeholder="Description"
                 rows={3}
               />
+              <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+
               <input
                 type="datetime-local"
                 className="w-full border px-3 py-2 rounded"
                 value={toLocalDateTimeString(formData.start)}
                 onChange={e => setFormData({ ...formData, start: e.target.value })}
               />
+              <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+
               <input
                 type="datetime-local"
                 className="w-full border px-3 py-2 rounded"
                 value={toLocalDateTimeString(formData.end)}
                 onChange={e => setFormData({ ...formData, end: e.target.value })}
               />
+              <label className="block mb-1 font-medium">Assign to</label>
 
-              {event.assignedTo && event.assignedTo.length > 0 && (
+
+              {/* Currently Assigned Users */}
+              {formData.assignedTo.length > 0 && (
                 <div className="mt-2 p-2 bg-gray-100 rounded">
                   <p className="text-sm font-semibold">Currently Assigned:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
-                    {event.assignedTo
-                      .filter(assignment => !pendingRemovals.includes(String(assignment.userId)))
-                      .map((assignment, index) => (
-                        <li key={`${assignment.userId || 'unknown'}-${index}`} className="flex items-center justify-between">
-                          <span>{assignment.user?.name || "Unknown"}</span>
+                    {formData.assignedTo.map((userId) => {
+                      const user = users.find(u => String(u.id) === userId);
+                      if (!user) return null; // skip if user is not found
+                      return (
+                        <li key={user.id} className="flex items-center justify-between">
+                          <span>{user.name}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleRemoveAssignedUser(assignment.userId);
+                              handleRemoveAssignedUser(user.id);
                             }}
                             className="text-gray-500 hover:text-red-600"
                             title="Remove user"
@@ -304,25 +324,30 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                             <X size={14} />
                           </button>
                         </li>
-                      ))}
+                      );
+                    })}
                   </ul>
                 </div>
               )}
 
-
               <select
                 multiple
                 className="w-full border px-3 py-2 rounded"
-                value={formData.assignedTo as string[]} // assert as string[]
+                value={formData.assignedTo}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    assignedTo: Array.from(e.target.selectedOptions)
-                      .map(o => o.value)
-                      .filter((v): v is string => v !== undefined), // remove undefined
-                  })
+                  setFormData(prev => ({
+                    ...prev,
+                    assignedTo: [
+                      ...prev.assignedTo, // keep existing
+                      ...Array.from(e.target.selectedOptions)
+                        .map(o => o.value)
+                        .filter((v): v is string => v !== undefined)
+                        .filter(v => !prev.assignedTo.includes(v)), // avoid duplicates
+                    ],
+                  }))
                 }
               >
+
                 {users.map(user => (
                   <option
                     key={user.id}
@@ -334,11 +359,48 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 ))}
               </select>
 
+
+
             </div>
 
             <div className="flex justify-end mt-4 gap-2">
               <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleSave}>Save</button>
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded"
+                onClick={() => setShowSaveConfirmModal(true)}
+              >
+                Save
+              </button>
+              {showSaveConfirmModal && (
+                <Dialog
+                  open={showSaveConfirmModal}
+                  onClose={() => setShowSaveConfirmModal(false)}
+                  className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+                >
+                  <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+                    <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
+                    <p className="mt-2">Are you sure you want to save changes to this event?</p>
+                    <div className="flex justify-end mt-4 gap-2">
+                      <button
+                        className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                        onClick={() => setShowSaveConfirmModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
+                        onClick={async () => {
+                          setShowSaveConfirmModal(false);
+                          await handleSave();
+                        }}
+                      >
+                        Confirm Save
+                      </button>
+                    </div>
+                  </Dialog.Panel>
+                </Dialog>
+              )}
+
             </div>
           </Dialog.Panel>
         </Dialog>

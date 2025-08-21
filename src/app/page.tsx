@@ -196,7 +196,7 @@ export default function App() {
         color: 'var(--foreground)',
       }}
     >
-      <Toaster position="bottom-right" />
+      <Toaster/>
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -266,7 +266,7 @@ export default function App() {
 
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => router.push('/meetings')}
+            onClick={() => (window.location.href = '/meetings')}
             className="px-4 py-2 bg-green-600 text-white rounded"
             title="View All Meetings"
           >

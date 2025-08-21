@@ -177,7 +177,6 @@ export default function UsersPage() {
     });
 
     if (!userConfirmed) {
-      toast('Deletion canceled', { icon: '⚠️' });
       return;
     }
 
@@ -223,12 +222,19 @@ export default function UsersPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                if (document.referrer) {
+                  window.location.href = document.referrer;
+                } else {
+                  window.location.href = '/'; // fallback if no referrer
+                }
+              }}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               title="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
+
             <h2
               className="text-2xl font-bold flex items-center gap-2"
               style={{ color: 'var(--foreground)' }}
@@ -300,7 +306,6 @@ export default function UsersPage() {
                                 designation: user.designation ?? '',
                               });
                               setShowModal(true);
-                              toast.success('Ready to edit user!');
                             }}
                             className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
                             title="Edit user"
@@ -404,7 +409,6 @@ export default function UsersPage() {
                   onClick={() => {
                     setShowModal(false);
                     setEditUserId(null);
-                    toast('Operation canceled', { icon: '⚠️' });
                   }}
                   className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
                 >
