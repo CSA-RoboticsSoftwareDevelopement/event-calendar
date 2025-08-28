@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Trash2, FilePen, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
+import { useTheme } from '../app/theme-provider';
 
 interface User {
   id: string | number;
@@ -23,6 +24,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -254,7 +256,11 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       {/* Edit Modal */}
       {showEditModal && (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
+<Dialog.Panel
+  className={`rounded p-6 w-[500px] ${
+    theme === 'dark' ? 'bg-zinc-800 text-white' : 'bg-white text-black'
+  }`}
+>
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
 
             {pendingRemovals.length > 0 && (

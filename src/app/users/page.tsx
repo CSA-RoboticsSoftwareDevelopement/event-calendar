@@ -272,7 +272,7 @@ export default function UsersPage() {
                   {currentUsers.map(user => (
                     <tr
                       key={user.id}
-                      className="hover:bg-gray-50 dark:hover:bg-zinc-900"
+                      className="hover:bg-gray-100 dark:hover:bg-zinc-900"
                       style={{
                         transition: 'background 0.2s, color 0.2s',
                       }}

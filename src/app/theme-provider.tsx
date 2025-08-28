@@ -1,26 +1,34 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import React from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css'; // optional CSS
+import 'tippy.js/dist/tippy.css';
+
+type Theme = 'light' | 'dark';
+
+interface ThemeContextValue {
+  theme: Theme;
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
+}
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  return context;
+};
 
 const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
   ({ children }, ref) => {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const router = useRouter(); // ✅ Use router for client-side navigation
+    const [theme, setTheme] = useState<Theme>('light');
+    const router = useRouter();
 
     useEffect(() => {
-      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-      let defaultTheme: 'light' | 'dark' = 'light'; // default for SSR
-
-      if (typeof window !== 'undefined') {
-        defaultTheme =
-          savedTheme ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      }
-
+      const savedTheme = localStorage.getItem('theme') as Theme | null;
+      const defaultTheme = savedTheme ?? 'light';
       setTheme(defaultTheme);
 
       if (defaultTheme === 'dark') {
@@ -45,61 +53,61 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
     }, [theme]);
 
     return (
-      <div
-        ref={ref}   // <-- add this line
-        className="transition-colors duration-300 min-h-screen"
-        style={{
-          background: 'var(--background)',
-          color: 'var(--foreground)',
-        }}
-      >
-
-        <header
-          className="p-4 flex justify-between items-center"
+      <ThemeContext.Provider value={{ theme, setTheme }}>
+        <div
+          ref={ref}
+          className="transition-colors duration-300 min-h-screen"
           style={{
             background: 'var(--background)',
             color: 'var(--foreground)',
           }}
         >
-          <h1 className="text-xl font-bold">📅 CSA Events</h1>
-          <div className="flex items-center gap-2">
-            <Tippy content="User Settings">
-              <button
-                onClick={() => (window.location.href = '/users')}
-                className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700"
-              >
-                <SlidersHorizontal className="w-5 h-5" />
-              </button>
-            </Tippy>
+          <header
+            className="p-4 flex justify-between items-center"
+            style={{
+              background: 'var(--background)',
+              color: 'var(--foreground)',
+            }}
+          >
+            <h1 className="text-xl font-bold">📅 CSA Events</h1>
+            <div className="flex items-center gap-2">
+              <Tippy content="User Settings">
+                <button
+                  onClick={() => (window.location.href = '/users')}
+                  className={`px-4 py-2 rounded transition-colors duration-200 ${theme === 'dark' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-300 text-black hover:bg-gray-200'
+                    }`}
+                >
+                  <SlidersHorizontal className="w-5 h-5" />
+                </button>
+              </Tippy>
 
-
-          <Tippy content="Dark mode will be available soon">
-              <span className="inline-block">
+              <Tippy content="Toggle Dark/Light Mode">
                 <button
                   onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}
-                className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700 cursor-not-allowed opacity-50"
-                disabled
+                  className={`px-4 py-2 rounded transition-colors duration-200 ${theme === 'dark' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-300 text-black hover:bg-gray-200'
+                    }`}
                 >
-                  {theme === 'light' ? '🌙 ' : '☀️ '}
+                  {theme === 'light' ? '🌙' : '☀️'}
                 </button>
-              </span>
-            </Tippy>
+              </Tippy>
 
-          </div>
-        </header>
-        <main
-          className="p-4"
-          style={{
-            background: 'var(--background)',
-            color: 'var(--foreground)',
-          }}
-        >
-          {children}
-        </main>
-      </div>
+            </div>
+          </header>
+          <main
+            className="p-4"
+            style={{
+              background: 'var(--background)',
+              color: 'var(--foreground)',
+            }}
+          >
+            {children}
+          </main>
+        </div>
+      </ThemeContext.Provider>
     );
-  });
+  }
+);
+
 ThemeProvider.displayName = 'ThemeProvider';
 
 export default ThemeProvider;
-

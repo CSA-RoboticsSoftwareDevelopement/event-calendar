@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Trash2, ArrowLeft, FilePen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
+import { useTheme } from '../theme-provider';
 
 // Define the data types for users and events
 type User = {
@@ -49,6 +50,7 @@ export default function EventsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -319,8 +321,20 @@ export default function EventsPage() {
                   {currentEvents.map((event, index) => (
                     <tr
                       key={event.id}
-                      className="hover:bg-gray-50 dark:hover:bg-zinc-900"
-                      style={{ transition: 'background 0.2s, color 0.2s' }}
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#18181b' : '#fff', // default row bg
+                        color: theme === 'dark' ? '#fff' : '#000',
+                        transition: 'background 0.2s, color 0.2s',
+                        cursor: 'pointer',
+                      }}
+                      onMouseOver={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
+                          theme === 'dark' ? '#27272a' : '#f9fafb'; // hover bg for dark/light
+                      }}
+                      onMouseOut={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
+                          theme === 'dark' ? '#18181b' : '#fff'; // reset bg
+                      }}
                     >
                       <td className="border px-4 py-3">{indexOfFirstEvent + index + 1}</td>
                       <td className="border px-4 py-3">
