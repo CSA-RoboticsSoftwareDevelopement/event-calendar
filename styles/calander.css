@@ -56,32 +56,7 @@
   overflow-y: hidden !important;
 }
 
-/* ==== Dark Mode ==== */
-.dark .rbc-calendar {
-  background-color: #18181b; /* zinc-900 */
-  color: white;
-}
 
-.dark .rbc-toolbar {
-  background-color: #27272a; /* zinc-800 */
-  color: white;
-}
-
-.dark .rbc-event {
-  background-color: #6366f1 !important; /* indigo-500 */
-  color: white;
-}
-
-.dark .rbc-show-more {
-  color: #a5b4fc; /* indigo-300 */
-}
-
-.dark .rbc-time-view,
-.dark .rbc-time-header,
-.dark .rbc-time-content {
-  background-color: #27272a;
-  color: white;
-}
 
 /* ==== Responsiveness ==== */
 @media (max-width: 768px) {

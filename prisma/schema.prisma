@@ -20,7 +20,7 @@ model User {
 model Event {
   id          Int               @id @default(autoincrement())
   title       String
-  description       String
+  description String?
   start       DateTime
   end         DateTime
   assignments EventAssignment[]
@@ -35,3 +35,6 @@ model EventAssignment {
 
   @@unique([userId, eventId])
 }
+
+
+

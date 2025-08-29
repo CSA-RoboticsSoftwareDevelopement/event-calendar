@@ -43,11 +43,21 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const deletedUser = await prisma.user.delete({
-      where: { id: Number(id) },
-    });
+    const userId = Number(id);
 
-    return NextResponse.json({ success: true, deletedUser });
+    // Use a transaction to ensure both operations succeed or fail together
+    await prisma.$transaction([
+      // First, delete all event assignments for this user
+      prisma.eventAssignment.deleteMany({
+        where: { userId: userId },
+      }),
+      // Then, delete the user
+      prisma.user.delete({
+        where: { id: userId },
+      }),
+    ]);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete Error:', error);
     return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });

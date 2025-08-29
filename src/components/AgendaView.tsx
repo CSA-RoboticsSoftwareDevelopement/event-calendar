@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Trash2, FilePen, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
-import { useTheme } from '../app/theme-provider';
 
 interface User {
   id: string | number;
@@ -24,7 +23,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -80,7 +78,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
     toast.custom((t) => (
       <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
-        bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700`}
+        bg-white p-4 rounded-lg shadow-lg border border-gray-200`}
       >
         <div className="flex flex-col space-y-3">
           <h3 className="font-semibold text-lg">Confirm Deletion</h3>
@@ -193,11 +191,11 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         <strong className="block truncate">{event.title}</strong>
         {/* Display the description on the main event card */}
         {event.description && (
-          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 truncate">
+          <p className="text-sm text-gray-700 mt-1 truncate">
             {event.description}
           </p>
         )}
-        <span className="text-sm text-gray-600 dark:text-gray-400 mt-1 block">
+        <span className="text-sm text-gray-600 mt-1 block">
           Assigned to:{' '}
           {event.assignedTo?.map(u => u.user?.name).filter(Boolean).join(', ') || '—'}
         </span>
@@ -232,7 +230,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           onClose={() => setShowDeleteModal(false)}
           className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
         >
-          <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+          <Dialog.Panel className="bg-white rounded-lg p-6 w-96">
             <Dialog.Title className="text-lg font-semibold">Delete Event</Dialog.Title>
             <p className="mt-2">This action will require confirmation</p>
             <div className="flex justify-end mt-4 gap-2">
@@ -257,9 +255,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       {showEditModal && (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
 <Dialog.Panel
-  className={`rounded p-6 w-[500px] ${
-    theme === 'dark' ? 'bg-zinc-800 text-white' : 'bg-white text-black'
-  }`}
+  className={`rounded p-6 w-[500px] bg-white text-black`}
 >
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
 
@@ -383,7 +379,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                   onClose={() => setShowSaveConfirmModal(false)}
                   className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
                 >
-                  <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+                  <Dialog.Panel className="bg-white rounded-lg p-6 w-96">
                     <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
                     <p className="mt-2">Are you sure you want to save changes to this event?</p>
                     <div className="flex justify-end mt-4 gap-2">

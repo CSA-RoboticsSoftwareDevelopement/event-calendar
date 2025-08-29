@@ -8,7 +8,7 @@ export function CustomEvent({ event }: { event: CalendarEvent }) {
     <div>
       <strong>{event.title}</strong>
       <br />
-      <small className="text-xs text-gray-600 dark:text-gray-400">
+      <small className="text-xs text-gray-600">
         Assigned to: {assigned}
       </small>
     </div>

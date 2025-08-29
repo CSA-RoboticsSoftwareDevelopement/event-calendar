@@ -14,7 +14,6 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
-import { useTheme } from './theme-provider';
 
 const localizer = momentLocalizer(moment);
 
@@ -46,7 +45,6 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const usersPerPage = 10;
-  const { theme, setTheme } = useTheme();
 
   // Refetch events function to refresh the calendar data
   const refetchEvents = () => {
@@ -192,11 +190,7 @@ export default function App() {
 
   return (
     <div
-      className="p-10 min-h-screen"
-      style={{
-        background: 'var(--background)',
-        color: 'var(--foreground)',
-      }}
+      className="p-10 min-h-screen bg-white text-black"
     >
       <Toaster />
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
@@ -208,9 +202,7 @@ export default function App() {
             onClick={() => setSelectedUserId(null)}
             className={`px-4 py-2 rounded ${selectedUserId === null
               ? 'bg-blue-600 text-white'
-              : theme === 'dark'
-                ? 'bg-zinc-700 text-white'
-                : 'bg-gray-300 text-black'
+              : 'bg-gray-300 text-black'
               }`}
           >
             All Users (
@@ -228,7 +220,7 @@ export default function App() {
             <button
               disabled={currentUserPage === 0}
               onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
-              className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
+              className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
             >
               &lt;
             </button>
@@ -245,7 +237,7 @@ export default function App() {
                       onClick={() => setSelectedUserId(user.id)}
                       className={`px-4 py-2 rounded flex flex-col items-start transition-colors duration-200 ${selectedUserId === user.id
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 text-black dark:bg-zinc-700 dark:text-white'
+                        : 'bg-gray-300 text-black'
                         }`}
                     >
                       <span>{user.name}</span>
@@ -263,7 +255,7 @@ export default function App() {
                   (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
                 )
               }
-              className="px-3 py-1 bg-gray-300 dark:bg-zinc-700 rounded disabled:opacity-50"
+              className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
             >
               &gt;
             </button>
@@ -289,11 +281,7 @@ export default function App() {
       </div>
 
       <div
-        className="p-4 rounded shadow w-full overflow-x-auto"
-        style={{
-          background: 'var(--background)',
-          color: 'var(--foreground)',
-        }}
+        className="p-4 rounded shadow w-full overflow-x-auto bg-white text-black"
       >
         <Calendar
           localizer={localizer}
@@ -317,8 +305,8 @@ export default function App() {
                         type="button"
                         onClick={() => props.onNavigate(nav)} // TS now knows nav is a NavigateAction
                         style={{
-                          backgroundColor: theme === 'dark' ? '#27272a' : '#e5e7eb',
-                          color: theme === 'dark' ? '#fff' : '#000',
+                          backgroundColor: '#e5e7eb',
+                          color: '#000',
                           padding: '0.5rem 1rem',
                           borderRadius: '0.375rem',
                           fontWeight: 500,
@@ -326,11 +314,11 @@ export default function App() {
                         }}
                         onMouseOver={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                            theme === 'dark' ? '#3f3f46' : '#d1d5db';
+                            '#d1d5db';
                         }}
                         onMouseOut={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                            theme === 'dark' ? '#27272a' : '#e5e7eb';
+                            '#e5e7eb';
                         }}
                       >
                         {label}
@@ -349,8 +337,8 @@ export default function App() {
                       type="button"
                       onClick={() => props.onView(view)} // TS now knows view is a literal View type
                       style={{
-                        backgroundColor: theme === 'dark' ? '#27272a' : '#e5e7eb',
-                        color: theme === 'dark' ? '#fff' : '#000',
+                        backgroundColor: '#e5e7eb',
+                        color: '#000',
                         padding: '0.5rem 1rem',
                         borderRadius: '0.375rem',
                         fontWeight: 500,
@@ -358,11 +346,11 @@ export default function App() {
                       }}
                       onMouseOver={(e) => {
                         (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                          theme === 'dark' ? '#3f3f46' : '#d1d5db';
+                          '#d1d5db';
                       }}
                       onMouseOut={(e) => {
                         (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                          theme === 'dark' ? '#27272a' : '#e5e7eb';
+                          '#e5e7eb';
                       }}
                     >
                       {view.charAt(0).toUpperCase() + view.slice(1)}
@@ -402,8 +390,7 @@ export default function App() {
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <div
-            className={`p-6 rounded shadow-md w-[90%] max-w-md sm:w-full ${theme === 'dark' ? 'bg-zinc-900 text-white' : 'bg-white text-black'
-              }`}
+            className="p-6 rounded shadow-md w-[90%] max-w-md sm:w-full bg-white text-black"
           >
 
             <h2 className="text-lg font-semibold mb-4">Create Event</h2>
@@ -414,7 +401,7 @@ export default function App() {
               id="event-title"
               type="text"
               placeholder="Event Title"
-              className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+              className="w-full mb-2 p-2 rounded border"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
@@ -424,7 +411,7 @@ export default function App() {
             <textarea
               id="event-description"
               placeholder="Event Description"
-              className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+              className="w-full mb-2 p-2 rounded border"
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -435,7 +422,7 @@ export default function App() {
             <input
               id="event-start"
               type="datetime-local"
-              className="w-full mb-2 p-2 rounded border dark:bg-zinc-700"
+              className="w-full mb-2 p-2 rounded border"
               value={start}
               onChange={e => setStart(e.target.value)}
             />
@@ -445,7 +432,7 @@ export default function App() {
             <input
               id="event-end"
               type="datetime-local"
-              className="w-full mb-4 p-2 rounded border dark:bg-zinc-700"
+              className="w-full mb-4 p-2 rounded border"
               value={end}
               onChange={e => setEnd(e.target.value)}
             />
@@ -458,7 +445,7 @@ export default function App() {
 
             <select
               multiple
-              className="w-full mb-4 p-2 rounded border dark:bg-zinc-700"
+              className="w-full mb-4 p-2 rounded border"
               value={selectedUsers.map(String)}
               onChange={e =>
                 setSelectedUsers(Array.from(e.target.selectedOptions, option => Number(option.value)))
@@ -506,7 +493,7 @@ export default function App() {
       {/* Event Details Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
@@ -532,7 +519,7 @@ export default function App() {
       {/* Daily Events Modal */}
       {showDayEventsModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
 
             <h2 className="text-lg font-semibold mb-4">
               Events on {selectedDate?.toLocaleDateString()}

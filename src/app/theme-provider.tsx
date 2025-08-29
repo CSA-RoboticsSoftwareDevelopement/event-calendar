@@ -5,8 +5,9 @@ import React, { useEffect, useState, createContext, useContext } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
+import toast, { Toaster } from 'react-hot-toast';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -27,33 +28,18 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
     const router = useRouter();
 
     useEffect(() => {
-      const savedTheme = localStorage.getItem('theme') as Theme | null;
-      const defaultTheme = savedTheme ?? 'light';
-      setTheme(defaultTheme);
-
-      if (defaultTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-
-      console.log('[Init Theme]:', defaultTheme);
+      
+      localStorage.setItem('theme', 'light');
     }, []);
 
-    useEffect(() => {
-      localStorage.setItem('theme', theme);
-
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-
-      console.log('[Changed Theme]:', theme);
-    }, [theme]);
+    const handleThemeClick = () => {
+      toast('Dark mode will be available soon!', {
+        icon: '🚧',
+      });
+    };
 
     return (
-      <ThemeContext.Provider value={{ theme, setTheme }}>
+      <ThemeContext.Provider value={{ theme: 'light', setTheme: () => {} }}>
         <div
           ref={ref}
           className="transition-colors duration-300 min-h-screen"
@@ -62,6 +48,7 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
             color: 'var(--foreground)',
           }}
         >
+          <Toaster />
           <header
             className="p-4 flex justify-between items-center"
             style={{
@@ -74,20 +61,18 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
               <Tippy content="User Settings">
                 <button
                   onClick={() => (window.location.href = '/users')}
-                  className={`px-4 py-2 rounded transition-colors duration-200 ${theme === 'dark' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-300 text-black hover:bg-gray-200'
-                    }`}
+                  className="px-4 py-2 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
                 >
                   <SlidersHorizontal className="w-5 h-5" />
                 </button>
               </Tippy>
 
-              <Tippy content="Toggle Dark/Light Mode">
+              <Tippy content="Dark mode coming soon!">
                 <button
-                  onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}
-                  className={`px-4 py-2 rounded transition-colors duration-200 ${theme === 'dark' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-300 text-black hover:bg-gray-200'
-                    }`}
+                  onClick={handleThemeClick}
+                  className="px-4 py-2 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
                 >
-                  {theme === 'light' ? '🌙' : '☀️'}
+                  🌙
                 </button>
               </Tippy>
 

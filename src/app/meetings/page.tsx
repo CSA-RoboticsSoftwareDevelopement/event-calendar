@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Trash2, ArrowLeft, FilePen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
-import { useTheme } from '../theme-provider';
 
 // Define the data types for users and events
 type User = {
@@ -50,7 +49,6 @@ export default function EventsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -244,9 +242,9 @@ export default function EventsPage() {
   };
   return (
 
-    <div className="p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+    <div className="p-6 bg-white text-black">
 
-      <div className="rounded-xl shadow-md p-6" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+      <div className="rounded-xl shadow-md p-6 bg-white text-black">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
@@ -259,13 +257,13 @@ export default function EventsPage() {
                   window.location.href = '/';
                 }
               }}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
               title="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <h2 className="text-2xl font-bold text-black">
               View All Events
             </h2>
           </div>
@@ -279,7 +277,7 @@ export default function EventsPage() {
                 placeholder="Search events or designations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white w-full"
+                className="pl-10 pr-4 py-2 border rounded-md bg-white text-black w-full"
               />
             </div>
 
@@ -287,7 +285,7 @@ export default function EventsPage() {
             <select
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
-              className="px-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white"
+              className="px-4 py-2 border rounded-md bg-white text-black"
             >
               <option value="all">All Designations</option>
               {getUniqueDesignations().map((designation, index) => (
@@ -303,18 +301,18 @@ export default function EventsPage() {
           <p>Loading events...</p>
         ) : (
           <div className="overflow-x-auto w-full">
-            <div className="rounded-xl overflow-hidden border border-gray-300 dark:border-zinc-700">
+            <div className="rounded-xl overflow-hidden border border-gray-300">
               <table className="w-full text-sm">
-                <thead className="bg-gray-400 dark:bg-zinc-700">
+                <thead className="bg-gray-400">
                   <tr>
-                    <th className="border px-2 py-3 w-16 text-left font-bold text-black dark:text-white">Serial No.</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Date</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Time</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Event</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Description</th> {/* New Description column */}
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Assigned To</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Designation</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Action</th>
+                    <th className="border px-2 py-3 w-16 text-left font-bold text-black">Serial No.</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Date</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Time</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Event</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Description</th> {/* New Description column */}
+                    <th className="border px-4 py-3 text-left font-bold text-black">Assigned To</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Designation</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -322,18 +320,18 @@ export default function EventsPage() {
                     <tr
                       key={event.id}
                       style={{
-                        backgroundColor: theme === 'dark' ? '#18181b' : '#fff', // default row bg
-                        color: theme === 'dark' ? '#fff' : '#000',
+                        backgroundColor: '#fff', // default row bg
+                        color: '#000',
                         transition: 'background 0.2s, color 0.2s',
                         cursor: 'pointer',
                       }}
                       onMouseOver={(e) => {
                         (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                          theme === 'dark' ? '#27272a' : '#f9fafb'; // hover bg for dark/light
+                          '#f9fafb'; // hover bg for light
                       }}
                       onMouseOut={(e) => {
                         (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                          theme === 'dark' ? '#18181b' : '#fff'; // reset bg
+                          '#fff'; // reset bg
                       }}
                     >
                       <td className="border px-4 py-3">{indexOfFirstEvent + index + 1}</td>
@@ -413,7 +411,7 @@ export default function EventsPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <span className="px-4 py-2 flex items-center" style={{ color: 'var(--foreground)' }}>
+              <span className="px-4 py-2 flex items-center text-black">
                 Page {currentPage} of {totalPages}
               </span>
               <button

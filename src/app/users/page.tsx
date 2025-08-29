@@ -47,8 +47,8 @@ export default function UsersPage() {
       const shouldProceed = await new Promise((resolve) => {
         const toastId = toast.custom(
           (t) => (
-            <div className="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-xl">
-              <p className="text-gray-800 dark:text-gray-200">
+            <div className="flex flex-col gap-2 p-4 bg-white rounded-lg shadow-xl">
+              <p className="text-gray-800">
                 Are you sure you want to update this user?
               </p>
               <div className="flex justify-end gap-2 mt-2">
@@ -57,7 +57,7 @@ export default function UsersPage() {
                     resolve(false);
                     toast.dismiss(toastId);
                   }}
-                  className="px-3 py-1 bg-gray-200 dark:bg-zinc-700 rounded-md hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
@@ -143,8 +143,8 @@ export default function UsersPage() {
     const userConfirmed = await new Promise((resolve) => {
       const toastId = toast.custom(
         (t) => (
-          <div className="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-xl">
-            <p className="text-gray-800 dark:text-gray-200">
+          <div className="flex flex-col gap-2 p-4 bg-white rounded-lg shadow-xl">
+            <p className="text-gray-800">
               Are you sure you want to delete this user?
             </p>
             <div className="flex justify-end gap-2 mt-2">
@@ -153,7 +153,7 @@ export default function UsersPage() {
                   resolve(false);
                   toast.dismiss(toastId);
                 }}
-                className="px-3 py-1 bg-gray-200 dark:bg-zinc-700 rounded-md hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+                className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -206,18 +206,10 @@ export default function UsersPage() {
 
   return (
     <div
-      className="p-6"
-      style={{
-        background: 'var(--background)',
-        color: 'var(--foreground)',
-      }}
+      className="p-6 bg-white text-black"
     >
       <div
-        className="rounded-xl shadow-md p-6"
-        style={{
-          background: 'var(--background)',
-          color: 'var(--foreground)',
-        }}
+        className="rounded-xl shadow-md p-6 bg-white text-black"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -229,15 +221,14 @@ export default function UsersPage() {
                   window.location.href = '/'; // fallback if no referrer
                 }
               }}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
               title="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
             <h2
-              className="text-2xl font-bold flex items-center gap-2"
-              style={{ color: 'var(--foreground)' }}
+              className="text-2xl font-bold flex items-center gap-2 text-black"
             >
               User Table
             </h2>
@@ -257,34 +248,24 @@ export default function UsersPage() {
           <p>Loading users...</p>
         ) : (
           <div className="overflow-x-auto w-full">
-            <div className="rounded-xl overflow-hidden border border-gray-300 dark:border-zinc-700">
+            <div className="rounded-xl overflow-hidden border border-gray-300">
               <table className="w-full text-sm">
-                <thead className="bg-gray-400 dark:bg-zinc-700">
+                <thead className="bg-gray-400">
                   <tr>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">ID</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Name</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Email</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Designation</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black dark:text-white">Action</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">ID</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Name</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Email</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Designation</th>
+                    <th className="border px-4 py-3 text-left font-bold text-black">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentUsers.map(user => (
                     <tr
                       key={user.id}
-                      className="hover:bg-gray-100 dark:hover:bg-zinc-900"
+                      className="hover:bg-gray-100"
                       style={{
                         transition: 'background 0.2s, color 0.2s',
-                      }}
-                      onMouseEnter={e => {
-                        if (document.documentElement.classList.contains('dark')) {
-                          (e.currentTarget as HTMLTableRowElement).style.color = 'black';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        if (document.documentElement.classList.contains('dark')) {
-                          (e.currentTarget as HTMLTableRowElement).style.color = '';
-                        }
                       }}
                     >
                       <td className="border px-4 py-3">{user.id}</td>
@@ -350,8 +331,7 @@ export default function UsersPage() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <span
-                className="px-4 py-2 flex items-center"
-                style={{ color: 'var(--foreground)' }}
+                className="px-4 py-2 flex items-center text-black"
               >
                 Page {currentPage} of {totalPages}
               </span>
@@ -371,10 +351,9 @@ export default function UsersPage() {
 
         {showModal && (
           <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
               <h3
-                className="text-lg font-semibold mb-4"
-                style={{ color: 'var(--foreground)' }}
+                className="text-lg font-semibold mb-4 text-black"
               >
                 {editUserId ? 'Edit User' : 'Add New User'}
               </h3>
@@ -385,7 +364,7 @@ export default function UsersPage() {
                   placeholder="Name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white"
+                  className="w-full px-4 py-2 border rounded-md"
                 />
                 <input
                   type="email"
@@ -393,7 +372,7 @@ export default function UsersPage() {
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white"
+                  className="w-full px-4 py-2 border rounded-md"
                 />
                 <input
                   type="text"
@@ -401,7 +380,7 @@ export default function UsersPage() {
                   placeholder="Designation"
                   value={formData.designation}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-md dark:bg-zinc-700 dark:text-white"
+                  className="w-full px-4 py-2 border rounded-md"
                 />
               </div>
               <div className="flex justify-end mt-6 gap-2">
