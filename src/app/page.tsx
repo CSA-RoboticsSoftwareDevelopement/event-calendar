@@ -46,12 +46,118 @@ export default function App() {
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const usersPerPage = 10;
 
+
+  //Authentication  
+
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [countdown, setCountdown] = useState(5); // 5 seconds
+  const [realUname, setRealUname] = useState("");
+
+
+
+
+  //Authentication  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const uidParam = params.get("uid");
+    const unameParam = params.get("uname");
+    const roleParam = params.get("role"); // <-- added user_role
+
+    if (uidParam && unameParam && roleParam) {
+      // ✅ Save from URL into sessionStorage
+      sessionStorage.setItem("uid", uidParam);
+      sessionStorage.setItem("uname", unameParam);
+      sessionStorage.setItem("role", roleParam); // <-- store role
+
+      console.log("📦 Encoded session stored:", { uidParam, unameParam, roleParam });
+
+      try {
+        const decodedUid = atob(uidParam);
+        const decodedUname = atob(unameParam);
+        const decodedRole = atob(roleParam); // <-- decode role
+
+        const [, realUid] = decodedUid.split("|");
+        const [, realUnameDecoded] = decodedUname.split("|");
+        const [, realRole] = decodedRole.split("|");
+
+        setRealUname(realUnameDecoded); // <-- store decoded name in state
+
+        console.log("🔓 Decoded values (without salt):", {
+          realUid,
+          realUname: realUnameDecoded,
+          realRole, // <-- log role
+        });
+      } catch (err) {
+        console.error("❌ Failed to decode values", err);
+      }
+
+      // Clean URL (remove query params)
+      window.history.replaceState({}, document.title, "/");
+    } else {
+      // 🚨 No URL values → check sessionStorage
+      const uidStored = sessionStorage.getItem("uid");
+      const unameStored = sessionStorage.getItem("uname");
+      const roleStored = sessionStorage.getItem("role"); // <-- check role
+
+      if (!uidStored || !unameStored || !roleStored) {
+        console.warn("⚠️ No session values found anywhere.");
+        setShowPermissionModal(true);
+
+        // Countdown interval
+        const interval = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              window.location.href = "https://csaappstore.com/";
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        return () => clearInterval(interval); // cleanup
+      } else {
+        try {
+          const decodedUnameStored = atob(unameStored);
+          const [, realUnameDecoded] = decodedUnameStored.split("|");
+          setRealUname(realUnameDecoded); // <-- use session value
+        } catch (err) {
+          console.error("❌ Failed to decode uname from sessionStorage", err);
+        }
+
+        console.log("✅ Using existing sessionStorage values:", {
+          uidStored,
+          unameStored,
+          roleStored, // <-- log existing role
+        });
+      }
+    }
+  }, []);
+
+
+
+
+
+
+
   // Refetch events function to refresh the calendar data
   const refetchEvents = () => {
     fetch('/api/events')
       .then(res => res.json())
       .then((data: CalendarEvent[]) => setEvents([...data]));
   };
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Fetch initial events and users on component mount
   useEffect(() => {
@@ -65,7 +171,7 @@ export default function App() {
   useEffect(() => {
     if (!start || !end) return;
 
-    fetch(`/api/users/availability?start=${start}&end=${end}`)
+    fetch(`/api/users/availability?start=${new Date(start).toISOString()}&end=${new Date(end).toISOString()}`)
       .then(res => res.json())
       .then((data: UserAvailability[]) => setAvailableUsers(data));
   }, [start, end]);
@@ -195,6 +301,7 @@ export default function App() {
       <Toaster />
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
+      <div><h1 className='text-3xl'>Hello, {realUname}</h1></div><br />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
 
         <div className="flex flex-wrap gap-2">
@@ -464,9 +571,11 @@ export default function App() {
                     {user.name}{' '}
                     {isAvailableUser(user)
                       ? user.isBusy
-                        ? `(Busy during this slot )`
+                        ? `(Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
                         : '(Available)'
                       : ''}
+
+
                   </option>
                 );
               })}
@@ -571,6 +680,25 @@ export default function App() {
           </div>
         </div>
       )}
+
+
+      {showPermissionModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-sm z-50">
+            <h2 className="text-lg font-semibold text-red-600 mb-2">
+              Access Denied
+            </h2>
+            <p className="text-gray-700">
+              You don’t have permission to access this page. Redirecting…
+            </p>
+            <p className="mt-3 text-sm text-gray-500">
+              You will be redirected in {countdown} second{countdown > 1 ? "s" : ""}.
+            </p>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

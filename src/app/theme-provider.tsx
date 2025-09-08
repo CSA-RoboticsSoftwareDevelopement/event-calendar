@@ -25,10 +25,11 @@ export const useTheme = () => {
 const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
   ({ children }, ref) => {
     const [theme, setTheme] = useState<Theme>('light');
+    const [roleValue, setRoleValue] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
-      
+
       localStorage.setItem('theme', 'light');
     }, []);
 
@@ -38,8 +39,25 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
       });
     };
 
+
+
+    useEffect(() => {
+      const roleStored = sessionStorage.getItem("role");
+      if (roleStored) {
+        try {
+          const decodedRole = atob(roleStored);
+          const [, role] = decodedRole.split("|"); // remove salt
+          setRoleValue(role); // <-- store in state
+          console.log('Role from sessionStorage:', role);
+        } catch (err) {
+          console.error("Failed to decode role from sessionStorage", err);
+        }
+      }
+    }, []);
+
+
     return (
-      <ThemeContext.Provider value={{ theme: 'light', setTheme: () => {} }}>
+      <ThemeContext.Provider value={{ theme: 'light', setTheme: () => { } }}>
         <div
           ref={ref}
           className="transition-colors duration-300 min-h-screen"
@@ -58,14 +76,35 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
           >
             <h1 className="text-xl font-bold">📅 CSA Events</h1>
             <div className="flex items-center gap-2">
-              <Tippy content="User Settings">
+
+              <Tippy content="Home">
                 <button
-                  onClick={() => (window.location.href = '/users')}
+                  onClick={() => (window.location.href = 'https://csaappstore.com/')}
                   className="px-4 py-2 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
                 >
-                  <SlidersHorizontal className="w-5 h-5" />
+                  🏠
                 </button>
               </Tippy>
+              <Tippy content={roleValue === '1' ? 'User Settings' : 'Access denied'}>
+                <span className="inline-block">
+                  <button
+                    onClick={() => {
+                      if (roleValue === '1') {
+                        window.location.href = '/users';
+                      }
+                    }}
+                    disabled={roleValue !== '1'}
+                    className={`px-4 py-2 rounded transition-colors duration-200 ${roleValue === '1'
+                      ? 'bg-gray-300 text-black hover:bg-gray-200'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                  >
+                    <SlidersHorizontal className="w-5 h-5" />
+                  </button>
+                </span>
+              </Tippy>
+
+
 
               <Tippy content="Dark mode coming soon!">
                 <button

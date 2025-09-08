@@ -22,6 +22,7 @@ export default function UsersPage() {
   const [editUserId, setEditUserId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 15;
+  const [roleValue, setRoleValue] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -35,6 +36,48 @@ export default function UsersPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const roleStored = sessionStorage.getItem("role");
+    if (roleStored) {
+      try {
+        const decodedRole = atob(roleStored);
+        const [, role] = decodedRole.split("|"); // remove salt
+        setRoleValue(role);
+        console.log('Role from sessionStorage:', role);
+
+        if (role !== '1') {
+          // Show modal if role is not 1
+          setShowPermissionModal(true);
+
+          const interval = setInterval(() => {
+            setCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                window.history.back(); // redirect back after countdown
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+
+          return () => clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Failed to decode role from sessionStorage", err);
+        window.history.back(); // fallback redirect
+      }
+    } else {
+      // No role in sessionStorage, redirect back
+      window.history.back();
+    }
+  }, []);
+
+
 
   const handleSubmitUser = async () => {
     const { name, email, designation } = formData;
@@ -404,6 +447,23 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {showPermissionModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-sm z-50">
+            <h2 className="text-lg font-semibold text-red-600 mb-2">
+              Access Denied
+            </h2>
+            <p className="text-gray-700">
+              You don’t have permission to access this page. Redirecting…
+            </p>
+            <p className="mt-3 text-sm text-gray-500">
+              You will be redirected in {countdown} second{countdown > 1 ? "s" : ""}.
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
