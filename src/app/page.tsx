@@ -14,6 +14,7 @@ import { CustomAgendaEvent } from '@/src/components/AgendaView';
 import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const localizer = momentLocalizer(moment);
 
@@ -44,7 +45,10 @@ export default function App() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentUserPage, setCurrentUserPage] = useState(0);
-  const usersPerPage = 10;
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  const usersPerPage =  windowWidth <  760 ?  9 :   windowWidth >=  760 && windowWidth <  1280 ? 15 : 19
+
+  console.log(windowWidth)
 
 
   //Authentication  
@@ -58,6 +62,21 @@ export default function App() {
 
   //Authentication  
   useEffect(() => {
+
+    const handleResize = () => {
+      window.addEventListener('resize', () => {
+        setWindowWidth(window.innerWidth)
+
+
+      })
+    }
+
+
+    handleResize()
+
+
+
+
     const params = new URLSearchParams(window.location.search);
     const uidParam = params.get("uid");
     const unameParam = params.get("uname");
@@ -132,6 +151,14 @@ export default function App() {
         });
       }
     }
+
+
+
+
+
+
+
+
   }, []);
 
 
@@ -296,16 +323,16 @@ export default function App() {
 
   return (
     <div
-      className="p-10 min-h-screen bg-white text-black"
+      className="min-h-screen bg-white text-black w-[99vw] md:w-[95vw] lg:w-[84vw] mx-auto"
     >
       <Toaster />
       {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
 
-      <div><h1 className='text-3xl'>Hello, {realUname}</h1></div><br />
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+      <div><h1 className='text-3xl scroll-m-20font-semibold tracking-tight mt-5'>Hello {realUname.split(" ")[0]}!</h1></div>
+      <div className="block lg:flex flex-col sm:flex-row justify-between items-start mt-10 mb-6 gap-4  w-full">
 
-        <div className="flex flex-wrap gap-2">
-          <button
+        <div className="flex flex-wrap gap-2 sm:w-full  lg:w-[70%] overflow-x-scroll">
+          {/* <button
             onClick={() => setSelectedUserId(null)}
             className={`px-4 py-2 rounded ${selectedUserId === null
               ? 'bg-blue-600 text-white'
@@ -316,24 +343,41 @@ export default function App() {
             {start && end
               ? availableUsers.filter(u => !u.isBusy).length
               : users.length
-            } )
-          </button>
+            })
+          </button> */}
 
 
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 overflow-x-auto max-w-full">
+          {/* <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 overflow-x-auto max-w-full "> */}
 
             {/* Left Arrow */}
-            <button
-              disabled={currentUserPage === 0}
-              onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
-              className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-            >
-              &lt;
-            </button>
+        
 
             {/* User Buttons */}
             <div className="flex gap-2 flex-wrap justify-start">
+
+            <button
+              // disabled={currentUserPage === 0}
+              onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
+              className={`h-8 w-8 flex justify-center items-center bg-gray-300 rounded disabled:opacity-50 ${currentUserPage === 0 ? 'hidden' : 'block'}`}
+            >
+              {/* &lt; */}
+              <ChevronLeft />
+            </button>
+
+            <button
+            onClick={() => setSelectedUserId(null)}
+            className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === null
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-300 text-black'
+              }`}
+          >
+            All Users (
+            {start && end
+              ? availableUsers.filter(u => !u.isBusy).length
+              : users.length
+            })
+          </button>
 
               {users
                 .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
@@ -342,34 +386,37 @@ export default function App() {
                     <button
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
-                      className={`px-4 py-2 rounded flex flex-col items-start transition-colors duration-200 ${selectedUserId === user.id
+                      className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === user.id
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-300 text-black'
                         }`}
                     >
-                      <span>{user.name}</span>
+                      {user.name.split(" ")[0]}
                     </button>
 
                   );
                 })}
-            </div>
 
-            {/* Right Arrow */}
-            <button
-              disabled={(currentUserPage + 1) * usersPerPage >= users.length}
+<button
+              // disabled={(currentUserPage + 1) * usersPerPage >= users.length}
               onClick={() =>
                 setCurrentUserPage(prev =>
                   (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
                 )
               }
-              className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+              className={`h-8 w-8 flex justify-center items-center bg-gray-300 rounded disabled:opacity-50 ${(currentUserPage + 1) * usersPerPage >= users.length ? 'hidden' : 'block'}`}
             >
-              &gt;
+              {/* &gt; */}
+               <ChevronRight />
             </button>
-          </div>
+            </div>
+
+            {/* Right Arrow */}
+          
+          {/* </div> */}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex justify-end mr-3 lg:mr-0  space-x-2 mt-7 lg:mt-0">
           <button
             onClick={() => (window.location.href = '/meetings')}
             className="px-4 py-2 bg-green-600 text-white rounded"
@@ -388,7 +435,7 @@ export default function App() {
       </div>
 
       <div
-        className="p-4 rounded shadow w-full overflow-x-auto bg-white text-black"
+        className="p-5 rounded-3xl mt-4 shadow-md w-full overflow-x-auto   text-black"
       >
         <Calendar
           localizer={localizer}
@@ -399,7 +446,7 @@ export default function App() {
           defaultView="month"
           selectable
           popup
-          style={{ minWidth: '700px', height: 600 }}
+          style={{ width: '100%', height: 600 }}
           components={{
             toolbar: (props) => (
               <div className="rbc-toolbar flex justify-between items-center">
@@ -414,7 +461,7 @@ export default function App() {
                         style={{
                           backgroundColor: '#e5e7eb',
                           color: '#000',
-                          padding: '0.5rem 1rem',
+                          padding: '',
                           borderRadius: '0.375rem',
                           fontWeight: 500,
                           cursor: 'pointer',
@@ -427,6 +474,7 @@ export default function App() {
                           (e.currentTarget as HTMLButtonElement).style.backgroundColor =
                             '#e5e7eb';
                         }}
+                        className='text-sm'
                       >
                         {label}
                       </button>
@@ -446,7 +494,7 @@ export default function App() {
                       style={{
                         backgroundColor: '#e5e7eb',
                         color: '#000',
-                        padding: '0.5rem 1rem',
+                        padding: '',
                         borderRadius: '0.375rem',
                         fontWeight: 500,
                         cursor: 'pointer',
@@ -459,6 +507,7 @@ export default function App() {
                         (e.currentTarget as HTMLButtonElement).style.backgroundColor =
                           '#e5e7eb';
                       }}
+                      className='text-sm'
                     >
                       {view.charAt(0).toUpperCase() + view.slice(1)}
                     </button>

@@ -68,19 +68,19 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
         >
           <Toaster />
           <header
-            className="p-4 flex justify-between items-center"
+            className="w-[97vw] pt-4  mx-auto flex justify-between items-center"
             style={{
               background: 'var(--background)',
               color: 'var(--foreground)',
             }}
           >
-            <h1 className="text-xl font-bold">📅 CSA Events</h1>
+            <h1 className="text-xl font-bold">📅 <span className='ml-1'>CSA Events</span></h1>
             <div className="flex items-center gap-2">
 
               <Tippy content="Home">
                 <button
                   onClick={() => (window.location.href = 'https://csaappstore.com/')}
-                  className="px-4 py-2 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
+                  className="w-10 h-10 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
                 >
                   🏠
                 </button>
@@ -94,7 +94,7 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
                       }
                     }}
                     disabled={roleValue !== '1'}
-                    className={`px-4 py-2 rounded transition-colors duration-200 ${roleValue === '1'
+                    className={`w-10 h-10 flex justify-center items-center rounded transition-colors duration-200 ${roleValue === '1'
                       ? 'bg-gray-300 text-black hover:bg-gray-200'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
@@ -109,7 +109,7 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
               <Tippy content="Dark mode coming soon!">
                 <button
                   onClick={handleThemeClick}
-                  className="px-4 py-2 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
+                  className="w-10 h-10 rounded transition-colors duration-200 bg-gray-300 text-black hover:bg-gray-200"
                 >
                   🌙
                 </button>

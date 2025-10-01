@@ -2,6 +2,9 @@ import './globals.css';
 import type { Metadata } from 'next';
 import ThemeProvider from './theme-provider';
 import { ToasterProvider } from 'src/components/ToasterProvider';
+import {Inter} from "next/font/google"
+
+const inter = Inter({subsets: ["latin"], variable: "--font-sans"})
 
 export const metadata: Metadata = {
   title: 'CSA Events',
@@ -10,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body
         className="min-h-screen"
         style={{
