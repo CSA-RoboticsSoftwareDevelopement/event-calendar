@@ -266,7 +266,7 @@ export default function EventsPage() {
   };
   return (
     <div className=" text-black w-[99vw]  md:w-[98vw] lg:w-[93vw] mx-auto mt-4 border-zinc-900">
-      <div className="rounded-3xl shadow-md p-6  text-black  w-[99%] mx-auto ">
+      <div className="rounded-3xl shadow-md p-2 md:p-4 lg:p-6  text-black  w-[99%] mx-auto ">
         <div className="lg:flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button

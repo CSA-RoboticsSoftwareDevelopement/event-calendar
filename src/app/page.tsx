@@ -557,17 +557,17 @@ export default function App() {
               id="event-title"
               type="text"
               placeholder="Event Title"
-              className="w-full mb-2 p-2 rounded border"
+              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
 
             {/* Input field for the event description with a label */}
-            <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="event-description" className="block text-sm font-medium mb-1 mt-2">Description</label>
             <textarea
               id="event-description"
               placeholder="Event Description"
-              className="w-full mb-2 p-2 rounded border"
+              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -578,30 +578,30 @@ export default function App() {
             <input
               id="event-start"
               type="datetime-local"
-              className="w-full mb-2 p-2 rounded border"
+              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
               value={start}
               onChange={e => setStart(e.target.value)}
             />
 
             {/* Input field for the end time with a label */}
-            <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+            <label htmlFor="event-end" className="block text-sm font-medium mb-1 mt-2">End Time</label>
             <input
               id="event-end"
               type="datetime-local"
-              className="w-full mb-4 p-2 rounded border"
+              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500 "
               value={end}
               onChange={e => setEnd(e.target.value)}
             />
 
             {/* User assignment section with a label */}
-            <label className="block mb-1 font-medium">Assign to (based on availability):</label>
+            <label className="block  font-medium  text-sm">Assign to (based on availability)</label>
             {availableUsers.length === 0 && (
-              <p className="text-sm text-red-500 mb-2">Select start & end time to load users.</p>
+              <p className="text-[11px] my-1 text-red-500 ">Select start & end time to load users.</p>
             )}
 
             <select
               multiple
-              className="w-full mb-4 p-2 rounded border"
+              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-sm outline-none hover:border-slate-500"
               value={selectedUsers.map(String)}
               onChange={e =>
                 setSelectedUsers(Array.from(e.target.selectedOptions, option => Number(option.value)))
