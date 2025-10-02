@@ -1,9 +1,19 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Trash2, ArrowLeft, FilePen, X } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { Dialog } from '@headlessui/react';
+import React, { useEffect, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  // Trash2,
+  Trash,
+  ArrowLeft,
+  // FilePen,
+  Pencil,
+  X,
+} from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Dialog } from "@headlessui/react";
 
 // Define the data types for users and events
 type User = {
@@ -31,17 +41,17 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterValue, setFilterValue] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterValue, setFilterValue] = useState("all");
   const eventsPerPage = 15;
   const [hasFetched, setHasFetched] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
-    title: '',
-    start: '',
-    end: '',
-    description: '', // New state for the description field
+    title: "",
+    start: "",
+    end: "",
+    description: "", // New state for the description field
     assignedTo: [] as string[],
   });
   const [users, setUsers] = useState<User[]>([]);
@@ -52,26 +62,31 @@ export default function EventsPage() {
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
-    const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
+    const date =
+      typeof localDateTime === "string"
+        ? new Date(localDateTime)
+        : localDateTime;
     return new Date(localDateTime).toISOString();
   };
 
   // Helper function to convert UTC ISO string to local date-time string for form input
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch('/api/users');
+        const res = await fetch("/api/users");
         const data = await res.json();
         setUsers(data);
       } catch (err) {
-        console.error('Failed to fetch users', err);
+        console.error("Failed to fetch users", err);
       }
     };
     fetchUsers();
@@ -89,12 +104,12 @@ export default function EventsPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/events');
+      const res = await fetch("/api/events");
       const data = await res.json();
       setEvents(data);
     } catch (error) {
-      console.error('Error fetching events:', error);
-      toast.error('Failed to load events', { id: 'events-error' });
+      console.error("Error fetching events:", error);
+      toast.error("Failed to load events", { id: "events-error" });
     } finally {
       setLoading(false);
     }
@@ -103,8 +118,8 @@ export default function EventsPage() {
   // Gets a list of unique designations for the filter dropdown
   const getUniqueDesignations = () => {
     const designations = new Set<string>();
-    events.forEach(event => {
-      event.assignedTo?.forEach(assignment => {
+    events.forEach((event) => {
+      event.assignedTo?.forEach((assignment) => {
         if (assignment.user.designation) {
           designations.add(assignment.user.designation);
         }
@@ -114,18 +129,18 @@ export default function EventsPage() {
   };
 
   // Filters events based on search term and designation filter
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase()) || // Added description to search
-      event.assignedTo?.some(a =>
+      event.assignedTo?.some((a) =>
         a.user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
     const matchesFilter =
-      filterValue === 'all' ||
-      event.assignedTo?.some(a =>
-        a.user.designation?.toLowerCase() === filterValue.toLowerCase()
+      filterValue === "all" ||
+      event.assignedTo?.some(
+        (a) => a.user.designation?.toLowerCase() === filterValue.toLowerCase()
       );
 
     return matchesSearch && matchesFilter;
@@ -134,7 +149,10 @@ export default function EventsPage() {
   // Pagination logic
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filteredEvents.slice(indexOfFirstEvent, indexOfLastEvent);
+  const currentEvents = filteredEvents.slice(
+    indexOfFirstEvent,
+    indexOfLastEvent
+  );
   const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
 
   // Formatting helpers for date and time display
@@ -143,27 +161,28 @@ export default function EventsPage() {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(dateString).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Handles event deletion with a confirmation toast
   const deleteEvent = async (id: number) => {
     try {
-      const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
 
       if (res.ok) {
-        setEvents(prev => prev.filter(event => event.id !== id));
-        toast.success('Event deleted successfully', { duration: 2000 });
+        setEvents((prev) => prev.filter((event) => event.id !== id));
+        toast.success("Event deleted successfully", { duration: 2000 });
       } else {
-        toast.error('Failed to delete event', { duration: 2500 });
+        toast.error("Failed to delete event", { duration: 2500 });
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Error deleting event', { duration: 2500 });
+      console.error("Error deleting event:", error);
+      toast.error("Error deleting event", { duration: 2500 });
     }
   };
-
-
 
   // Prepares the edit modal with the selected event's data
   const handleEditClick = (event: Event) => {
@@ -173,7 +192,7 @@ export default function EventsPage() {
       start: toLocalDateTimeString(event.start),
       end: toLocalDateTimeString(event.end),
       description: event.description, // Set the description in the form data
-      assignedTo: event.assignedTo?.map(a => String(a.user.id)) || [],
+      assignedTo: event.assignedTo?.map((a) => String(a.user.id)) || [],
     });
     setPendingRemovals([]);
     setShowEditModal(true);
@@ -182,10 +201,10 @@ export default function EventsPage() {
   // Handles marking a user for removal, which is finalized on save
   const handleRemoveAssignedUser = (userId: number) => {
     const userIdStr = String(userId);
-    setPendingRemovals(prev => [...prev, userIdStr]);
-    setFormData(prev => ({
+    setPendingRemovals((prev) => [...prev, userIdStr]);
+    setFormData((prev) => ({
       ...prev,
-      assignedTo: prev.assignedTo.filter(id => id !== userIdStr)
+      assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
     }));
   };
 
@@ -194,17 +213,17 @@ export default function EventsPage() {
   const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
 
-    const toastId = toast.loading('Saving changes...');
+    const toastId = toast.loading("Saving changes...");
 
     try {
       // Rest of your existing code remains the same...
       // First, process pending removals
       if (pendingRemovals.length > 0) {
         await Promise.all(
-          pendingRemovals.map(userId =>
+          pendingRemovals.map((userId) =>
             fetch(`/api/events/${currentEvent.id}/assignments`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ userId: Number(userId) }),
             })
           )
@@ -217,35 +236,38 @@ export default function EventsPage() {
         description: formData.description,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
-        assignedTo: formData.assignedTo.map(id => Number(id)),
+        assignedTo: formData.assignedTo.map((id) => Number(id)),
       };
 
       const res = await fetch(`/api/events/${currentEvent.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setPendingRemovals([]);
         setShowEditModal(false);
-        toast.success('Event updated successfully!', { id: toastId });
+        toast.success("Event updated successfully!", { id: toastId });
         fetchEvents();
       } else {
         const errorText = await res.text();
-        throw new Error(errorText || 'Failed to update event');
+        throw new Error(errorText || "Failed to update event");
       }
     } catch (err) {
-      console.error('Update error:', err);
-      toast.error(err instanceof Error ? err.message : 'Error saving changes. Please try again.', { id: toastId });
+      console.error("Update error:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Error saving changes. Please try again.",
+        { id: toastId }
+      );
     }
   };
   return (
-
-    <div className="p-6 bg-white text-black">
-
-      <div className="rounded-xl shadow-md p-6 bg-white text-black">
-        <div className="flex items-center justify-between mb-4">
+    <div className=" text-black w-[99vw]  md:w-[98vw] lg:w-[93vw] mx-auto mt-4 border-zinc-900">
+      <div className="rounded-3xl shadow-md p-6  text-black  w-[99%] mx-auto ">
+        <div className="lg:flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => {
@@ -254,21 +276,21 @@ export default function EventsPage() {
                   window.location.href = document.referrer;
                 } else {
                   // Fallback: go to homepage
-                  window.location.href = '/';
+                  window.location.href = "/";
                 }
               }}
-              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors mb-4"
               title="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <h2 className="text-2xl font-bold text-black">
+            <h2 className="text-2xl text-black mb-6 mt-2 font-semibold">
               View All Events
             </h2>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-end">
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -277,7 +299,7 @@ export default function EventsPage() {
                 placeholder="Search events or designations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border rounded-md bg-white text-black w-full"
+                className="pl-10 pr-4 py-2 h-11 w-full md:w-[250px] bg-white lg:w-[300px] border border-slate-300 text-xs outline-none hover:border-slate-400  rounded-2xl text-black"
               />
             </div>
 
@@ -285,9 +307,9 @@ export default function EventsPage() {
             <select
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
-              className="px-4 py-2 border rounded-md bg-white text-black"
+              className="px-2 py-2 h-11 w-full lg:w-[300px] md:w-[250px]   border border-slate-300 text-xs outline-none hover:border-slate-400  rounded-2xl text-black bg-white"
             >
-              <option value="all">All Designations</option>
+              <option value="all" className="pr-2">All Designations</option>
               {getUniqueDesignations().map((designation, index) => (
                 <option key={index} value={designation}>
                   {designation}
@@ -300,63 +322,79 @@ export default function EventsPage() {
         {loading ? (
           <p>Loading events...</p>
         ) : (
-          <div className="overflow-x-auto w-full">
-            <div className="rounded-xl overflow-hidden border border-gray-300">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-400">
-                  <tr>
-                    <th className="border px-2 py-3 w-16 text-left font-bold text-black">Serial No.</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Date</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Time</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Event</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Description</th> {/* New Description column */}
-                    <th className="border px-4 py-3 text-left font-bold text-black">Assigned To</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Designation</th>
-                    <th className="border px-4 py-3 text-left font-bold text-black">Action</th>
+          <div className="">
+            <div className="  overflow-x-scroll rounded-lg mt-7">
+              <table
+                className="events-table rounded-2xl w-full table-fixed "
+                style={{ borderRadius: "15px" }}
+              >
+                <thead className=" h-14 events-table w-full">
+                  <tr className="py-2 events-table rounded-2xl w-full bg-zinc-500 " >
+                    <th className="events-table w-[50px]  lg:w-[4%]  ">S No.</th>
+                    <th className="events-table w-[28vw] md:w-[15vw]  lg:w-[10%] ">Date</th>
+                    <th className="events-table  w-[28vw] md:w-[15vw]   lg:w-[10%] ">Time</th>
+                    <th className="events-table w-[28vw] md:w-[25vw]   lg:w-[15%]">Event</th>
+                    <th className="events-table w-[90vw] md:w-[50vw]   lg:w-[30%]">Description</th>
+                    {/* New Description column */}
+                    <th className="events-table  w-[30vw] md:w-[25vw]   lg:w-[10%] ">Assigned To</th>
+                    <th className="events-table  w-[30vw] md:w-[20vw]   lg:w-[12%] ">Designation</th>
+                    <th className="events-table  w-[30vw] md:w-[15vw]   lg:w-[8%]">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody
+                 
+                  className="text-sm "
+                >
                   {currentEvents.map((event, index) => (
                     <tr
                       key={event.id}
                       style={{
-                        backgroundColor: '#fff', // default row bg
-                        color: '#000',
-                        transition: 'background 0.2s, color 0.2s',
-                        cursor: 'pointer',
+                        // default row bg
+                        color: "#000",
+                        transition: "background 0.2s, color 0.2s",
+                        cursor: "pointer",
+                        border: "1px solid lightgray",
+                        padding: "4rem",
                       }}
+                      className=""
                       onMouseOver={(e) => {
-                        (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                          '#f9fafb'; // hover bg for light
+                        (
+                          e.currentTarget as HTMLTableRowElement
+                        ).style.backgroundColor = "#f9fafb"; // hover bg for light
                       }}
                       onMouseOut={(e) => {
-                        (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                          '#fff'; // reset bg
+                        (
+                          e.currentTarget as HTMLTableRowElement
+                        ).style.backgroundColor = "#fff"; // reset bg
                       }}
                     >
-                      <td className="border px-4 py-3">{indexOfFirstEvent + index + 1}</td>
-                      <td className="border px-4 py-3">
+                      <td className="py-3 text-center align-middle">
+                        {indexOfFirstEvent + index + 1}
+                      </td>
+                      <td className="py-3 px-3 align-middle">
                         {formatDate(event.start)}
                       </td>
-                      <td className="border px-4 py-3">
+                      <td className="py-3 px-3 align-middle">
                         {formatTime(event.start)} - {formatTime(event.end)}
                       </td>
-                      <td className="border px-4 py-3 font-medium">
+                      <td className="py-3 px-3 align-middle font-medium">
                         {event.title}
                       </td>
-                      <td className="border px-4 py-3 break-words max-w-xs">
+                      <td className="py-3 px-3 align-middle break-words">
                         {event.description} {/* Display the description */}
                       </td>
-                      <td className="border px-4 py-3 break-words max-w-xs">
+                      <td className="py-3 px-3 align-middle break-words ">
                         <div className="flex flex-col gap-1">
                           {event.assignedTo?.map((assignment, i) => (
                             <div key={i} className="flex flex-col">
-                              <span className="font-medium">{assignment.user.name}</span>
+                              <span className="font-medium">
+                                {assignment.user.name}
+                              </span>
                             </div>
                           ))}
                         </div>
                       </td>
-                      <td className="border px-4 py-3 break-words max-w-xs">
+                      <td className="py-3 px-3 align-middle break-words ">
                         <div className="flex flex-col gap-1">
                           {event.assignedTo?.map((assignment, i) => (
                             <div key={i}>
@@ -365,31 +403,35 @@ export default function EventsPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="border px-4 py-3">
-                        <div className="flex items-center gap-2">
+                      <td className="py-3 align-middle ">
+                        <div className="flex  justify-center items-center gap-3">
                           <button
                             onClick={() => handleEditClick(event)}
-                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            className="text-blue-500 hover:text-blue-800 flex items-center gap-1"
                             title="Edit event"
                           >
-                            <FilePen className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => {
                               setEventToDelete(event);
                               setShowDeleteModal(true);
-                            }} className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                            }}
+                            className="text-red-500 hover:text-red-800 flex items-center gap-1"
                             title="Delete event"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {filteredEvents.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="text-center py-6 text-gray-500">
+                    <tr className="">
+                      <td
+                        colSpan={8}
+                        className="text-center py-6 text-gray-500 "
+                      >
                         No events found matching your criteria.
                       </td>
                     </tr>
@@ -405,7 +447,7 @@ export default function EventsPage() {
           <div className="flex justify-end mt-6">
             <div className="flex gap-2 items-center">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
@@ -415,7 +457,9 @@ export default function EventsPage() {
                 Page {currentPage} of {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
@@ -428,59 +472,99 @@ export default function EventsPage() {
 
       {/* Edit Modal (Copied from agendaview.tsx) */}
       {showEditModal && currentEvent && (
-        <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+        <Dialog
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
           <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
-            <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold">
+              Edit Event
+            </Dialog.Title>
 
             {pendingRemovals.length > 0 && (
               <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
-                You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
+                You have {pendingRemovals.length} pending user removal(s) that
+                will be saved when you click Save.
               </div>
             )}
 
             <div className="mt-4 space-y-4">
-              <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
+              <label
+                htmlFor="event-title"
+                className="block text-sm font-medium mb-1"
+              >
+                Title
+              </label>
 
               <input
                 className="w-full border px-3 py-2 rounded"
                 value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 placeholder="Title"
               />
-              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
+              <label
+                htmlFor="event-description"
+                className="block text-sm font-medium mb-1"
+              >
+                Description
+              </label>
               <textarea
                 className="w-full border px-3 py-2 rounded min-h-[100px]" // Added textarea for a larger input area
                 value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Description"
               />
-              <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+              <label
+                htmlFor="event-start"
+                className="block text-sm font-medium mb-1"
+              >
+                Start Time
+              </label>
 
               <input
                 type="datetime-local"
                 className="w-full border px-3 py-2 rounded"
                 value={formData.start}
-                onChange={e => setFormData({ ...formData, start: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, start: e.target.value })
+                }
               />
-              <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+              <label
+                htmlFor="event-end"
+                className="block text-sm font-medium mb-1"
+              >
+                End Time
+              </label>
 
               <input
                 type="datetime-local"
                 className="w-full border px-3 py-2 rounded"
                 value={formData.end}
-                onChange={e => setFormData({ ...formData, end: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, end: e.target.value })
+                }
               />
               <label className="block mb-1 font-medium">Assign to </label>
-
 
               {currentEvent.assignedTo?.length > 0 && (
                 <div className="mt-2 p-2 bg-gray-100 rounded">
                   <p className="text-sm font-semibold">Currently Assigned:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {currentEvent.assignedTo
-                      .filter(assignment => !pendingRemovals.includes(String(assignment.userId)))
+                      .filter(
+                        (assignment) =>
+                          !pendingRemovals.includes(String(assignment.userId))
+                      )
                       .map((assignment, index) => (
-                        <li key={assignment.userId} className="flex items-center justify-between">
+                        <li
+                          key={assignment.userId}
+                          className="flex items-center justify-between"
+                        >
                           <span>{assignment.user?.name || "Unknown"}</span>
                           <button
                             onClick={(e) => {
@@ -503,29 +587,41 @@ export default function EventsPage() {
                 className="w-full border px-3 py-2 rounded"
                 value={formData.assignedTo}
                 onChange={(e) => {
-                  const newSelected = Array.from(e.target.selectedOptions).map(o => o.value);
+                  const newSelected = Array.from(e.target.selectedOptions).map(
+                    (o) => o.value
+                  );
                   // Append new selections without removing existing ones
                   setFormData({
                     ...formData,
-                    assignedTo: Array.from(new Set([...formData.assignedTo, ...newSelected])),
+                    assignedTo: Array.from(
+                      new Set([...formData.assignedTo, ...newSelected])
+                    ),
                   });
                 }}
               >
-                {users.map(user => (
+                {users.map((user) => (
                   <option
                     key={user.id}
                     value={user.id}
-                    className={formData.assignedTo.includes(user.id.toString()) ? "bg-blue-200 font-semibold" : ""}
+                    className={
+                      formData.assignedTo.includes(user.id.toString())
+                        ? "bg-blue-200 font-semibold"
+                        : ""
+                    }
                   >
                     {user.name}
                   </option>
                 ))}
               </select>
-
             </div>
 
             <div className="flex justify-end mt-4 gap-2">
-              <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button
+                className="bg-gray-200 px-4 py-2 rounded"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </button>
               <button
                 type="button"
                 className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -538,11 +634,18 @@ export default function EventsPage() {
         </Dialog>
       )}
       {showSaveModal && currentEvent && (
-        <Dialog open={showSaveModal} onClose={() => setShowSaveModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+        <Dialog
+          open={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
           <Dialog.Panel className="bg-white rounded p-6 w-[400px]">
-            <Dialog.Title className="text-lg font-semibold">Confirm Save</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold">
+              Confirm Save
+            </Dialog.Title>
             <p className="mt-2 text-sm text-gray-600">
-              Are you sure you want to save changes to <span className="font-medium">{currentEvent.title}</span>?
+              Are you sure you want to save changes to{" "}
+              <span className="font-medium">{currentEvent.title}</span>?
             </p>
 
             <div className="flex justify-end mt-4 gap-2">
@@ -567,11 +670,18 @@ export default function EventsPage() {
       )}
 
       {showDeleteModal && eventToDelete && (
-        <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+        <Dialog
+          open={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
           <Dialog.Panel className="bg-white rounded p-6 w-[400px]">
-            <Dialog.Title className="text-lg font-semibold">Confirm Deletion</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold">
+              Confirm Deletion
+            </Dialog.Title>
             <p className="mt-2 text-sm text-gray-600">
-              Are you sure you want to delete <span className="font-medium">{eventToDelete.title}</span>?
+              Are you sure you want to delete{" "}
+              <span className="font-medium">{eventToDelete.title}</span>?
             </p>
 
             <div className="flex justify-end mt-4 gap-2">
@@ -594,8 +704,6 @@ export default function EventsPage() {
           </Dialog.Panel>
         </Dialog>
       )}
-
-
     </div>
   );
 }
