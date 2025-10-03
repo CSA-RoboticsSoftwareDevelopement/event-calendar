@@ -265,8 +265,8 @@ export default function EventsPage() {
     }
   };
   return (
-    <div className=" text-black w-[99vw]  md:w-[98vw] lg:w-[93vw] mx-auto mt-4 border-zinc-900">
-      <div className="rounded-3xl shadow-md p-2 md:p-4 lg:p-6  text-black  w-[99%] mx-auto ">
+    <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
+      <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
         <div className="lg:flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
@@ -322,93 +322,51 @@ export default function EventsPage() {
         {loading ? (
           <p>Loading events...</p>
         ) : (
-          <div className="">
-            <div className="  overflow-x-scroll rounded-lg mt-7">
-              <table
-                className="events-table rounded-2xl w-full table-fixed "
-                style={{ borderRadius: "15px" }}
-              >
-                <thead className=" h-14 events-table w-full">
-                  <tr className="py-2 events-table rounded-2xl w-full bg-zinc-500 " >
-                    <th className="events-table w-[50px]  lg:w-[4%]  ">S No.</th>
-                    <th className="events-table w-[28vw] md:w-[15vw]  lg:w-[10%] ">Date</th>
-                    <th className="events-table  w-[28vw] md:w-[15vw]   lg:w-[10%] ">Time</th>
-                    <th className="events-table w-[28vw] md:w-[25vw]   lg:w-[15%]">Event</th>
-                    <th className="events-table w-[90vw] md:w-[50vw]   lg:w-[30%]">Description</th>
-                    {/* New Description column */}
-                    <th className="events-table  w-[30vw] md:w-[25vw]   lg:w-[10%] ">Assigned To</th>
-                    <th className="events-table  w-[30vw] md:w-[20vw]   lg:w-[12%] ">Designation</th>
-                    <th className="events-table  w-[30vw] md:w-[15vw]   lg:w-[8%]">Actions</th>
+          <div className="mt-7">
+            {/* Desktop / Tablet View */}
+            <div className="hidden md:block overflow-x-auto rounded-lg">
+              <table className="w-full table-fixed border-collapse rounded-2xl">
+                <thead className="h-14 bg-zinc-500 text-white">
+                  <tr>
+                    <th className="w-[4%]">S No.</th>
+                    <th className="w-[10%]">Date</th>
+                    <th className="w-[10%]">Time</th>
+                    <th className="w-[15%]">Event</th>
+                    <th className="w-[30%]">Description</th>
+                    <th className="w-[10%]">Assigned To</th>
+                    <th className="w-[12%]">Designation</th>
+                    <th className="w-[8%]">Actions</th>
                   </tr>
                 </thead>
-                <tbody
-                 
-                  className="text-sm "
-                >
+                <tbody className="text-sm">
                   {currentEvents.map((event, index) => (
                     <tr
                       key={event.id}
-                      style={{
-                        // default row bg
-                        color: "#000",
-                        transition: "background 0.2s, color 0.2s",
-                        cursor: "pointer",
-                        border: "1px solid lightgray",
-                        padding: "4rem",
-                      }}
-                      className=""
-                      onMouseOver={(e) => {
-                        (
-                          e.currentTarget as HTMLTableRowElement
-                        ).style.backgroundColor = "#f9fafb"; // hover bg for light
-                      }}
-                      onMouseOut={(e) => {
-                        (
-                          e.currentTarget as HTMLTableRowElement
-                        ).style.backgroundColor = "#fff"; // reset bg
-                      }}
+                      className="border-b hover:bg-gray-50"
                     >
-                      <td className="py-3 text-center align-middle">
-                        {indexOfFirstEvent + index + 1}
-                      </td>
-                      <td className="py-3 px-3 align-middle">
-                        {formatDate(event.start)}
-                      </td>
-                      <td className="py-3 px-3 align-middle">
+                      <td className="py-3 text-center">{indexOfFirstEvent + index + 1}</td>
+                      <td className="py-3 px-3">{formatDate(event.start)}</td>
+                      <td className="py-3 px-3">
                         {formatTime(event.start)} - {formatTime(event.end)}
                       </td>
-                      <td className="py-3 px-3 align-middle font-medium">
-                        {event.title}
+                      <td className="py-3 px-3 font-medium">{event.title}</td>
+                      <td className="py-3 px-3 break-words">{event.description}</td>
+                      <td className="py-3 px-3">
+                        {event.assignedTo?.map((a, i) => (
+                          <div key={i} className="font-medium">{a.user.name}</div>
+                        ))}
                       </td>
-                      <td className="py-3 px-3 align-middle break-words">
-                        {event.description} {/* Display the description */}
+                      <td className="py-3 px-3">
+                        {event.assignedTo?.map((a, i) => (
+                          <div key={i}>{a.user.designation}</div>
+                        ))}
                       </td>
-                      <td className="py-3 px-3 align-middle break-words ">
-                        <div className="flex flex-col gap-1">
-                          {event.assignedTo?.map((assignment, i) => (
-                            <div key={i} className="flex flex-col">
-                              <span className="font-medium">
-                                {assignment.user.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 align-middle break-words ">
-                        <div className="flex flex-col gap-1">
-                          {event.assignedTo?.map((assignment, i) => (
-                            <div key={i}>
-                              <span>{assignment.user.designation}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-3 align-middle ">
-                        <div className="flex  justify-center items-center gap-3">
+                      <td className="py-3 text-center">
+                        <div className="flex justify-center gap-3">
                           <button
                             onClick={() => handleEditClick(event)}
-                            className="text-blue-500 hover:text-blue-800 flex items-center gap-1"
-                            title="Edit event"
+                            className="text-blue-500 hover:text-blue-800"
+                            title="Edit"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
@@ -417,8 +375,8 @@ export default function EventsPage() {
                               setEventToDelete(event);
                               setShowDeleteModal(true);
                             }}
-                            className="text-red-500 hover:text-red-800 flex items-center gap-1"
-                            title="Delete event"
+                            className="text-red-500 hover:text-red-800"
+                            title="Delete"
                           >
                             <Trash className="w-4 h-4" />
                           </button>
@@ -426,20 +384,64 @@ export default function EventsPage() {
                       </td>
                     </tr>
                   ))}
-                  {filteredEvents.length === 0 && (
-                    <tr className="">
-                      <td
-                        colSpan={8}
-                        className="text-center py-6 text-gray-500 "
-                      >
-                        No events found matching your criteria.
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile View (Card Layout) */}
+            <div className="block md:hidden space-y-4">
+              {currentEvents.map((event, index) => (
+                <div
+                  key={event.id}
+                  className="border rounded-lg p-4 shadow-md bg-white"
+                >
+                  {/* Event Title + Action Buttons */}
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {event.title}
+                    </h3>
+                    <div className="flex gap-3 shrink-0">
+                      <button
+                        onClick={() => handleEditClick(event)}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEventToDelete(event);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Event Meta Info */}
+                  <div className="mt-3 text-sm text-gray-700 space-y-1">
+                    
+                    <p><span className="font-semibold">📅 Date:</span> {formatDate(event.start)}</p>
+                    <p><span className="font-semibold">⏰ Time:</span> {formatTime(event.start)} - {formatTime(event.end)}</p>
+                    <p><span className="font-semibold">📝 Description:</span> {event.description}</p>
+                    <p>
+                      <span className="font-semibold">👤 Assigned To:</span>{" "}
+                      {event.assignedTo?.map(a => a.user.name).join(", ")}
+                    </p>
+                    <p>
+                      <span className="font-semibold">💼 Designation:</span>{" "}
+                      {event.assignedTo?.map(a => a.user.designation).join(", ")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
+
         )}
 
         {/* Pagination */}
