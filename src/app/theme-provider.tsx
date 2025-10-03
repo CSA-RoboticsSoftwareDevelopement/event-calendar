@@ -6,28 +6,22 @@ import { SlidersHorizontal } from 'lucide-react';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import toast, { Toaster } from 'react-hot-toast';
-
 type Theme = 'light';
-
 interface ThemeContextValue {
   theme: Theme;
   setTheme: React.Dispatch<React.SetStateAction<Theme>>;
 }
-
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error('useTheme must be used within ThemeProvider');
   return context;
 };
-
 const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
   ({ children }, ref) => {
     const [theme, setTheme] = useState<Theme>('light');
     const [roleValue, setRoleValue] = useState<string | null>(null);
     const router = useRouter();
-
     useEffect(() => {
 
       localStorage.setItem('theme', 'light');
@@ -38,9 +32,6 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
         icon: '🚧',
       });
     };
-
-
-
     useEffect(() => {
       const roleStored = sessionStorage.getItem("role");
       if (roleStored) {
@@ -54,8 +45,6 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
         }
       }
     }, []);
-
-
     return (
       <ThemeContext.Provider value={{ theme: 'light', setTheme: () => { } }}>
         <div
@@ -74,7 +63,7 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
               color: 'var(--foreground)',
             }}
           >
-            <h1 className="text-xl font-bold">📅 <span className='ml-1'>CSA Events</span></h1>
+            <h1 className="text-xl font-bold">🗓️ <span className='ml-1'>CSA Events</span></h1>
             <div className="flex items-center gap-2">
 
               <Tippy content="Home">
@@ -103,9 +92,6 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
                   </button>
                 </span>
               </Tippy>
-
-
-
               <Tippy content="Dark mode coming soon!">
                 <button
                   onClick={handleThemeClick}
@@ -133,5 +119,4 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
 );
 
 ThemeProvider.displayName = 'ThemeProvider';
-
 export default ThemeProvider;

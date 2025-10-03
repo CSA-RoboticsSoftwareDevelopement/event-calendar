@@ -1,14 +1,11 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
   Search,
-  // Trash2,
   Trash,
   ArrowLeft,
-  // FilePen,
   Pencil,
   X,
 } from "lucide-react";
@@ -59,7 +56,7 @@ export default function EventsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-
+  const eventsContainerRef = useRef<HTMLDivElement | null>(null);
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
     const date =
@@ -77,7 +74,6 @@ export default function EventsPage() {
       date.getDate()
     )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
-
   // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
     const fetchUsers = async () => {
@@ -149,10 +145,14 @@ export default function EventsPage() {
   // Pagination logic
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filteredEvents.slice(
-    indexOfFirstEvent,
-    indexOfLastEvent
+
+  // Sort events by start date ascending (earliest first)
+  const sortedEvents = [...filteredEvents].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
   );
+
+  // Slice after sorting
+  const currentEvents = sortedEvents.slice(indexOfFirstEvent, indexOfLastEvent);
   const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
 
   // Formatting helpers for date and time display
@@ -208,11 +208,9 @@ export default function EventsPage() {
     }));
   };
 
-  // Handles saving the updated event data
   // Handles saving the updated event daa
   const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
-
     const toastId = toast.loading("Saving changes...");
 
     try {
@@ -264,6 +262,11 @@ export default function EventsPage() {
       );
     }
   };
+  useEffect(() => {
+    if (eventsContainerRef.current) {
+      eventsContainerRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [currentPage]);
   return (
     <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
       <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
@@ -322,46 +325,43 @@ export default function EventsPage() {
         {loading ? (
           <p>Loading events...</p>
         ) : (
-          <div className="mt-7">
+          <div ref={eventsContainerRef} className="mt-7">
             {/* Desktop / Tablet View */}
             <div className="hidden md:block overflow-x-auto rounded-lg">
-              <table className="w-full table-fixed border-collapse rounded-2xl">
+              <table className="w-full table-fixed border-collapse border border-gray-300 rounded-2xl">
                 <thead className="h-14 bg-zinc-500 text-white">
                   <tr>
-                    <th className="w-[4%]">S No.</th>
-                    <th className="w-[10%]">Date</th>
-                    <th className="w-[10%]">Time</th>
-                    <th className="w-[15%]">Event</th>
-                    <th className="w-[30%]">Description</th>
-                    <th className="w-[10%]">Assigned To</th>
-                    <th className="w-[12%]">Designation</th>
-                    <th className="w-[8%]">Actions</th>
+                    <th className="w-[4%] border border-gray-300">S No.</th>
+                    <th className="w-[10%] border border-gray-300">Date</th>
+                    <th className="w-[10%] border border-gray-300">Time</th>
+                    <th className="w-[15%] border border-gray-300">Event</th>
+                    <th className="w-[30%] border border-gray-300">Description</th>
+                    <th className="w-[10%] border border-gray-300">Assigned To</th>
+                    <th className="w-[12%] border border-gray-300">Designation</th>
+                    <th className="w-[8%] border border-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {currentEvents.map((event, index) => (
-                    <tr
-                      key={event.id}
-                      className="border-b hover:bg-gray-50"
-                    >
-                      <td className="py-3 text-center">{indexOfFirstEvent + index + 1}</td>
-                      <td className="py-3 px-3">{formatDate(event.start)}</td>
-                      <td className="py-3 px-3">
+                    <tr key={event.id} className="hover:bg-gray-50">
+                      <td className="py-3 text-center border border-gray-300">{indexOfFirstEvent + index + 1}</td>
+                      <td className="py-3 px-3 border border-gray-300">{formatDate(event.start)}</td>
+                      <td className="py-3 px-3 border border-gray-300">
                         {formatTime(event.start)} - {formatTime(event.end)}
                       </td>
-                      <td className="py-3 px-3 font-medium">{event.title}</td>
-                      <td className="py-3 px-3 break-words">{event.description}</td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 font-medium border border-gray-300">{event.title}</td>
+                      <td className="py-3 px-3 break-words border border-gray-300">{event.description}</td>
+                      <td className="py-3 px-3 border border-gray-300">
                         {event.assignedTo?.map((a, i) => (
                           <div key={i} className="font-medium">{a.user.name}</div>
                         ))}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 border border-gray-300">
                         {event.assignedTo?.map((a, i) => (
                           <div key={i}>{a.user.designation}</div>
                         ))}
                       </td>
-                      <td className="py-3 text-center">
+                      <td className="py-3 text-center border border-gray-300">
                         <div className="flex justify-center gap-3">
                           <button
                             onClick={() => handleEditClick(event)}
@@ -423,7 +423,7 @@ export default function EventsPage() {
 
                   {/* Event Meta Info */}
                   <div className="mt-3 text-sm text-gray-700 space-y-1">
-                    
+
                     <p><span className="font-semibold">📅 Date:</span> {formatDate(event.start)}</p>
                     <p><span className="font-semibold">⏰ Time:</span> {formatTime(event.start)} - {formatTime(event.end)}</p>
                     <p><span className="font-semibold">📝 Description:</span> {event.description}</p>
@@ -449,19 +449,25 @@ export default function EventsPage() {
           <div className="flex justify-end mt-6">
             <div className="flex gap-2 items-center">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                onClick={() => {
+                  setCurrentPage((prev) => Math.max(prev - 1, 1));
+                  window.scrollTo({ top: 0, behavior: "smooth" }); // scroll to top
+                }}
                 disabled={currentPage === 1}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
+
               <span className="px-4 py-2 flex items-center text-black">
                 Page {currentPage} of {totalPages}
               </span>
+
               <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
+                onClick={() => {
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+                  window.scrollTo({ top: 0, behavior: "smooth" }); // scroll to top
+                }}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-md border hover:bg-gray-100 disabled:opacity-50"
               >
@@ -470,6 +476,7 @@ export default function EventsPage() {
             </div>
           </div>
         )}
+
       </div>
 
       {/* Edit Modal (Copied from agendaview.tsx) */}

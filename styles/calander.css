@@ -3,25 +3,18 @@
   background-color: white;
   color: black;
 }
-
 .rbc-toolbar {
-  background-color: #f9fafb; /* light gray */
+  background-color: #f9fafb;
+  /* light gray */
   border-bottom: 1px solid #e5e7eb;
   padding: 1rem;
 }
-
 .rbc-event {
-  background-color: #4f46e5 !important; /* indigo-600 */
+  background: none !important;
   color: white;
   border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
+  padding: 0;
 }
-
 /* ==== Month View ==== */
 .rbc-month-view .rbc-event {
   display: none !important;
@@ -32,7 +25,8 @@
 }
 
 .rbc-show-more {
-  color: #6366f1; /* indigo-500 */
+  color: #6366f1;
+  /* indigo-500 */
   font-weight: bold;
   cursor: pointer;
   font-size: 0.75rem;
@@ -45,25 +39,21 @@
   padding: 0.25rem;
   font-weight: 500;
 }
-
 /* Hide scroll in month view */
 .rbc-month-row {
   overflow: hidden !important;
 }
-
 /* Prevent extra spacing in month grid */
 .rbc-row-content {
   overflow-y: hidden !important;
 }
-
-
-
 /* ==== Responsiveness ==== */
 @media (max-width: 768px) {
   .rbc-month-view {
     height: auto !important;
   }
 }
+
 /* Fix toolbar layout */
 .rbc-toolbar {
   display: flex;

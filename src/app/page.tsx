@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -11,14 +10,12 @@ import { CalendarEvent, User } from '@/src/types/Event';
 import { CustomAgendaEvent } from '@/src/components/AgendaView';
 //import { CustomEvent } from '@/src/components/CustomEvent';
 //import { CustomMonthEvent } from '@/src/components/CustomMonthEvent';
-import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
+//import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Tippy from '@tippyjs/react';
-
 const localizer = momentLocalizer(moment);
-
 interface UserAvailability {
   id: number;
   name: string;
@@ -26,8 +23,6 @@ interface UserAvailability {
   nextAvailable: string;
   availableSlots?: { start: string; end: string }[];
 }
-
-// Main App component
 export default function App() {
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -36,7 +31,6 @@ export default function App() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
-  // New state for the event description
   const [description, setDescription] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -81,7 +75,6 @@ export default function App() {
         const [, realUnameDecoded] = decodedUname.split("|");
         const [, realRole] = decodedRole.split("|");
         setRealUname(realUnameDecoded); // <-- store decoded name in state
-
         console.log("🔓 Decoded values (without salt):", {
           realUid,
           realUname: realUnameDecoded,
@@ -280,12 +273,14 @@ export default function App() {
       className="min-h-screen bg-white text-black w-[99vw] md:w-[95vw] lg:w-[84vw] mx-auto"
     >
       <Toaster />
-      {/* <h1 className="text-2xl font-bold mb-4">📅 Event Calendar</h1> */}
+      {/* <h1 className="text-2xl font-bold mb-4">🗓️ Event Calendar</h1> */}
 
-      <div><h1 className='text-3xl scroll-m-20font-semibold tracking-tight mt-5'>Hello {realUname.split(" ")[0]}!</h1></div>
+      <h1 className="text-3xl font-bold tracking-tight mt-5 font-sans">
+        Hello {realUname.split(" ")[0]}!
+      </h1>
       <div className="block lg:flex flex-col sm:flex-row justify-between items-start mt-10 mb-6 gap-4  w-full">
 
-        <div className="flex flex-wrap gap-2 sm:w-full  lg:w-[70%] overflow-x-scroll">
+        <div className="flex flex-wrap gap-2 sm:w-full  lg:w-[70%] overflow-hidden">
           {/* <button
             onClick={() => setSelectedUserId(null)}
             className={`px-4 py-2 rounded ${selectedUserId === null
@@ -359,8 +354,6 @@ export default function App() {
               <ChevronRight />
             </button>
           </div>
-
-          {/* Right Arrow */}
 
           {/* </div> */}
         </div>
@@ -473,23 +466,35 @@ export default function App() {
             ),
 
             event: ({ event }) => {
-              // Truncate title to 20 characters
               const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
-
+              // Dynamic background based on description
+              const backgroundColor = event.description?.toLowerCase().includes("holiday") ? "#ef4444" : "#4f46e5"; // indigo
               return (
                 <Tippy
                   content={
                     <div className="p-2 text-sm">
-                      <p className="font-semibold">{event.title}</p>
+                      <p className="font-semibold mb-1">{event.title}</p>
+
+                      {event.assignedTo && event.assignedTo.length > 0 && (
+                        <p className="text-xs">
+                          <strong>Assigned to:</strong>{' '}
+                          {event.assignedTo.map(u => u.user?.name).join(', ')}
+                        </p>
+                      )}
                     </div>
                   }
                   theme="light-border"
                   placement="top"
                 >
-                  <div className="bg-blue-500 text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm hover:bg-blue-600 transition">
+                  <div
+                    className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
+                    style={{ backgroundColor }}
+                    title=""
+                  >
                     {truncatedTitle}
                   </div>
                 </Tippy>
+
               );
             },
 
