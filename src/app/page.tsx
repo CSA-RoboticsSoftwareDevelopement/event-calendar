@@ -473,43 +473,26 @@ export default function App() {
             ),
 
             event: ({ event }) => {
-              const assignedUsers =
-                event.assignedTo?.map((a) => a.user.name) ??
-                event.assignments?.map((a) => a.user?.name).filter(Boolean) ??
-                [];
+              // Truncate title to 20 characters
+              const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
 
-              // Truncate title to 10 characters
-              const truncatedTitle = event.title.length > 10 ? event.title.slice(0, 10) + "…" : event.title;
               return (
                 <Tippy
                   content={
                     <div className="p-2 text-sm">
                       <p className="font-semibold">{event.title}</p>
-                      <p className="text-gray-400">
-                        Assigned to: {assignedUsers.length ? assignedUsers.join(', ') : 'N/A'}
-                      </p>
                     </div>
                   }
                   theme="light-border"
                   placement="top"
                 >
-                  <div className="bg-blue-500 text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm hover:bg-blue-600 transition flex items-center gap-1">
-                    <span>{truncatedTitle}</span>
-                    <div className="flex gap-1">
-                      {assignedUsers.map((name, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-white text-blue-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold"
-                          title={name}
-                        >
-                          {name.charAt(0).toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="bg-blue-500 text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm hover:bg-blue-600 transition">
+                    {truncatedTitle}
                   </div>
                 </Tippy>
               );
             },
+
             dateCellWrapper: (props) => (
               <div
                 {...props}
