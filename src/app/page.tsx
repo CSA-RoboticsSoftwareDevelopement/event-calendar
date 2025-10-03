@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
-
+import 'tippy.js/dist/tippy.css';
 import { useRouter } from 'next/navigation';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'styles/calander.css';
@@ -15,6 +15,7 @@ import { CustomDateCellWrapper } from '@/src/components/CustomDateCellWrapper';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import Tippy from '@tippyjs/react';
 
 const localizer = momentLocalizer(moment);
 
@@ -46,23 +47,14 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth)
-  const usersPerPage =  windowWidth <  760 ?  9 :   windowWidth >=  760 && windowWidth <  1280 ? 15 : 19
-
+  const usersPerPage = windowWidth < 760 ? 9 : windowWidth >= 760 && windowWidth < 1280 ? 15 : 19
   console.log(windowWidth)
-
-
   //Authentication  
-
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [countdown, setCountdown] = useState(5); // 5 seconds
   const [realUname, setRealUname] = useState("");
-
-
-
-
   //Authentication  
   useEffect(() => {
-
     const handleResize = () => {
       window.addEventListener('resize', () => {
         setWindowWidth(window.innerWidth)
@@ -70,35 +62,24 @@ export default function App() {
 
       })
     }
-
-
     handleResize()
-
-
-
-
     const params = new URLSearchParams(window.location.search);
     const uidParam = params.get("uid");
     const unameParam = params.get("uname");
     const roleParam = params.get("role"); // <-- added user_role
-
     if (uidParam && unameParam && roleParam) {
       // ✅ Save from URL into sessionStorage
       sessionStorage.setItem("uid", uidParam);
       sessionStorage.setItem("uname", unameParam);
       sessionStorage.setItem("role", roleParam); // <-- store role
-
       console.log("📦 Encoded session stored:", { uidParam, unameParam, roleParam });
-
       try {
         const decodedUid = atob(uidParam);
         const decodedUname = atob(unameParam);
         const decodedRole = atob(roleParam); // <-- decode role
-
         const [, realUid] = decodedUid.split("|");
         const [, realUnameDecoded] = decodedUname.split("|");
         const [, realRole] = decodedRole.split("|");
-
         setRealUname(realUnameDecoded); // <-- store decoded name in state
 
         console.log("🔓 Decoded values (without salt):", {
@@ -151,40 +132,13 @@ export default function App() {
         });
       }
     }
-
-
-
-
-
-
-
-
   }, []);
-
-
-
-
-
-
-
   // Refetch events function to refresh the calendar data
   const refetchEvents = () => {
     fetch('/api/events')
       .then(res => res.json())
       .then((data: CalendarEvent[]) => setEvents([...data]));
   };
-
-
-
-
-
-
-
-
-
-
-
-
 
   // Fetch initial events and users on component mount
   useEffect(() => {
@@ -345,16 +299,11 @@ export default function App() {
               : users.length
             })
           </button> */}
-
-
-
           {/* <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 overflow-x-auto max-w-full "> */}
 
-            {/* Left Arrow */}
-        
-
-            {/* User Buttons */}
-            <div className="flex gap-2 flex-wrap justify-start">
+          {/* Left Arrow */}
+          {/* User Buttons */}
+          <div className="flex gap-2 flex-wrap justify-start">
 
             <button
               // disabled={currentUserPage === 0}
@@ -366,38 +315,38 @@ export default function App() {
             </button>
 
             <button
-            onClick={() => setSelectedUserId(null)}
-            className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === null
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-300 text-black'
-              }`}
-          >
-            All Users (
-            {start && end
-              ? availableUsers.filter(u => !u.isBusy).length
-              : users.length
-            })
-          </button>
+              onClick={() => setSelectedUserId(null)}
+              className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === null
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-300 text-black'
+                }`}
+            >
+              All Users (
+              {start && end
+                ? availableUsers.filter(u => !u.isBusy).length
+                : users.length
+              })
+            </button>
 
-              {users
-                .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
-                .map(user => {
-                  return (
-                    <button
-                      key={user.id}
-                      onClick={() => setSelectedUserId(user.id)}
-                      className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === user.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 text-black'
-                        }`}
-                    >
-                      {user.name.split(" ")[0]}
-                    </button>
+            {users
+              .slice(currentUserPage * usersPerPage, (currentUserPage + 1) * usersPerPage)
+              .map(user => {
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => setSelectedUserId(user.id)}
+                    className={`px-3 h-8 text-[11px] lg:text-[13px] rounded flex flex-col justify-center items-center transition-colors duration-200 ${selectedUserId === user.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-300 text-black'
+                      }`}
+                  >
+                    {user.name.split(" ")[0]}
+                  </button>
 
-                  );
-                })}
+                );
+              })}
 
-<button
+            <button
               // disabled={(currentUserPage + 1) * usersPerPage >= users.length}
               onClick={() =>
                 setCurrentUserPage(prev =>
@@ -407,12 +356,12 @@ export default function App() {
               className={`h-8 w-8 flex justify-center items-center bg-gray-300 rounded disabled:opacity-50 ${(currentUserPage + 1) * usersPerPage >= users.length ? 'hidden' : 'block'}`}
             >
               {/* &gt; */}
-               <ChevronRight />
+              <ChevronRight />
             </button>
-            </div>
+          </div>
 
-            {/* Right Arrow */}
-          
+          {/* Right Arrow */}
+
           {/* </div> */}
         </div>
 
@@ -447,6 +396,13 @@ export default function App() {
           selectable
           popup
           style={{ width: '100%', height: 600 }}
+          eventPropGetter={() => {
+            return {
+              style: {},      // keep any styles you want
+              className: '',  // keep any classes you want
+              // Do NOT include title
+            };
+          }}
           components={{
             toolbar: (props) => (
               <div className="rbc-toolbar flex justify-between items-center">
@@ -482,9 +438,7 @@ export default function App() {
                   })}
 
                 </span>
-
                 <span className="rbc-toolbar-label text-lg font-semibold">{props.label}</span>
-
                 <span className="rbc-btn-group flex gap-2">
                   {(['month', 'week', 'day', 'agenda'] as const).map((view) => (
                     <button
@@ -517,9 +471,52 @@ export default function App() {
               </div>
 
             ),
-            event: () => null, // hide event bars in month view
+
+            event: ({ event }) => {
+              const assignedUsers =
+                event.assignedTo?.map((a) => a.user.name) ??
+                event.assignments?.map((a) => a.user?.name).filter(Boolean) ??
+                [];
+
+              // Truncate title to 10 characters
+              const truncatedTitle = event.title.length > 10 ? event.title.slice(0, 10) + "…" : event.title;
+              return (
+                <Tippy
+                  content={
+                    <div className="p-2 text-sm">
+                      <p className="font-semibold">{event.title}</p>
+                      <p className="text-gray-400">
+                        Assigned to: {assignedUsers.length ? assignedUsers.join(', ') : 'N/A'}
+                      </p>
+                    </div>
+                  }
+                  theme="light-border"
+                  placement="top"
+                >
+                  <div className="bg-blue-500 text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm hover:bg-blue-600 transition flex items-center gap-1">
+                    <span>{truncatedTitle}</span>
+                    <div className="flex gap-1">
+                      {assignedUsers.map((name, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-white text-blue-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold"
+                          title={name}
+                        >
+                          {name.charAt(0).toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Tippy>
+              );
+            },
             dateCellWrapper: (props) => (
-              <CustomDateCellWrapper {...props} events={formattedEvents} />
+              <div
+                {...props}
+                className="rbc-date-cell border border-gray-200 min-h-[100px] p-1 align-top"
+              >
+                {props.children}
+              </div>
             ),
             agenda: {
               event: (props) => (
@@ -538,6 +535,7 @@ export default function App() {
             setEventsForSelectedDate(events);
             setShowDayEventsModal(true);
           }}
+
         />
 
       </div>
@@ -729,8 +727,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-
       {showPermissionModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-sm z-50">
@@ -746,8 +742,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-
     </div>
   );
 }
