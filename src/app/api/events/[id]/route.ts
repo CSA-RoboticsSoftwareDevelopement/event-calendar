@@ -80,3 +80,4 @@ export async function PUT(
     return Response.json({ error: "Failed to update event" }, { status: 500 });
   }
 }
+//src\app\api\events\[id]\route.ts

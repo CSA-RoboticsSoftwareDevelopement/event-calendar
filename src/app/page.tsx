@@ -32,6 +32,7 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [eventType, setEventType] = useState<'regular' | 'holiday'>('regular');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
@@ -164,7 +165,8 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          description, // Include the new description field
+          description,
+          eventType,
           start: startUTC,
           end: endUTC,
           userIds: selectedUsers,
@@ -176,7 +178,8 @@ export default function App() {
         setEvents([...events, newEvent]);
         setShowModal(false);
         setTitle('');
-        setDescription(''); // Clear the description state
+        setDescription('');
+        setEventType('regular');
         setStart('');
         setEnd('');
         setSelectedUsers([]);
@@ -369,10 +372,21 @@ export default function App() {
 
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded"
+            className="px-4 py-2 bg-green-600 text-white rounded flex items-center gap-2"
           >
-            + Create Event
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              width="24px"
+              viewBox="0 -960 960 960"
+              fill="#FFFFFF"
+              className="w-5 h-5"
+            >
+              <path d="M680-80v-120H560v-80h120v-120h80v120h120v80H760v120h-80Zm-480-80q-33 0-56.5-23.5T120-240v-480q0-33 23.5-56.5T200-800h40v-80h80v80h240v-80h80v80h40q33 0 56.5 23.5T760-720v244q-20-3-40-3t-40 3v-84H200v320h280q0 20 3 40t11 40H200Zm0-480h480v-80H200v80Zm0 0v-80 80Z" />
+            </svg>
+            Create Event
           </button>
+
         </div>
       </div>
 
@@ -467,14 +481,15 @@ export default function App() {
 
             event: ({ event }) => {
               const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
-              // Dynamic background based on description
-              const backgroundColor = event.description?.toLowerCase().includes("holiday") ? "#ef4444" : "#4f46e5"; // indigo
+              const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
+              const eventTypeLabel = event.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular';
+              
               return (
                 <Tippy
                   content={
                     <div className="p-2 text-sm">
                       <p className="font-semibold mb-1">{event.title}</p>
-
+                      <p className="text-xs mb-1">{eventTypeLabel}</p>
                       {event.assignedTo && event.assignedTo.length > 0 && (
                         <p className="text-xs">
                           <strong>Assigned to:</strong>{' '}
@@ -531,11 +546,34 @@ export default function App() {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div
-            className="p-6 rounded shadow-md w-[90%] max-w-md sm:w-full bg-white text-black"
-          >
-
+          <div className="p-6 rounded shadow-md w-[90%] max-w-md sm:w-full bg-white text-black">
             <h2 className="text-lg font-semibold mb-4">Create Event</h2>
+
+            {/* Toggle Switch for Event Type */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Event Type</label>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${eventType === 'regular' ? 'text-blue-600' : 'text-gray-500'}`}>
+                  📅 Regular
+                </span>
+                <button
+                  type="button"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    eventType === 'holiday' ? 'bg-red-500' : 'bg-gray-300'
+                  }`}
+                  onClick={() => setEventType(eventType === 'regular' ? 'holiday' : 'regular')}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      eventType === 'holiday' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium ${eventType === 'holiday' ? 'text-red-600' : 'text-gray-500'}`}>
+                  🏖️ Holiday
+                </span>
+              </div>
+            </div>
 
             {/* Input field for the event title with a label */}
             <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
@@ -618,7 +656,10 @@ export default function App() {
 
             <div className="flex justify-end items-center gap-2">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEventType('regular');
+                }}
                 className="px-4 py-2 bg-gray-400 rounded text-white"
               >
                 Cancel
@@ -638,8 +679,8 @@ export default function App() {
       {selectedEvent && (
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
           <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
-
             <h2 className="text-lg font-semibold mb-4">Event Details</h2>
+            <p><strong>Type:</strong> {selectedEvent.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular Event'}</p>
             <p><strong>Title:</strong> {selectedEvent.title}</p>
             {/* Display the new description field */}
             <p><strong>Description:</strong> {selectedEvent.description || '—'}</p>
@@ -672,7 +713,7 @@ export default function App() {
             {eventsForSelectedDate.map((event) => (
               <div key={event.id} className="border-b py-2">
                 <p className="font-bold">{event.title}</p>
-                {/* Display the new description field in the daily events modal */}
+                <p className="text-sm">Type: {event.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular'}</p>
                 <p className="text-sm">Description: {event.description || '—'}</p>
                 <p className="text-sm">
                   {new Date(event.start).toLocaleTimeString()} - {new Date(event.end).toLocaleTimeString()}

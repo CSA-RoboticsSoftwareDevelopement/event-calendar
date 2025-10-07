@@ -1,27 +1,28 @@
-export interface CalendarEvent {
-  id: number;
-  title: string;
-  description?: string;
-  start: string | Date;
-  end: string | Date;
-  assignedTo: { userId: number; user: { id: number; name: string } }[];
-}
+// @/src/types/Event.ts
 
 export interface User {
   id: number;
   name: string;
-   nextAvailable?: string;
+  email: string;
+  designation?: string;
 }
+
 export interface CalendarEvent {
   id: number;
   title: string;
-  start: Date | string;
-  end: Date | string;
-  assignments?: {
+  description?: string;
+  eventType: 'regular' | 'holiday'; // NEW: Event type field
+  start: string | Date;
+  end: string | Date;
+  assignedTo?: Array<{
     userId: number;
-    user: {
-      id: number;
-      name: string;
-    } | null;
-  }[];
+    user?: User;
+  }>;
+}
+
+export interface EventAssignment {
+  id: number;
+  userId: number;
+  eventId: number;
+  user?: User;
 }

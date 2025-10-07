@@ -1,4 +1,4 @@
-// Corrected Next.js API route to include event descriptions
+// app/api/events/route.ts
 import { prisma } from "@/src/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -21,6 +21,7 @@ export async function GET() {
       id: event.id,
       title: event.title,
       description: event.description ?? "", // ensure description is always a string
+      eventType: (event as any).eventType || "regular", // Include event type with fallback
       start: event.start.toISOString(), // Convert to ISO UTC string
       end: event.end.toISOString(), // Convert to ISO UTC string
       assignedTo: event.assignments.map((a) => ({
@@ -49,16 +50,25 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Create a new event in the database, including the description
+    // Validate required fields
+    if (!body.title || !body.start || !body.end) {
+      return NextResponse.json(
+        { error: "Missing required fields: title, start, or end" },
+        { status: 400 }
+      );
+    }
+
+    // Create a new event in the database, including the description and event type
     const event = await prisma.event.create({
       data: {
         title: body.title,
-        description: body.description, // Correctly save the description
+        description: body.description || null, // Correctly save the description
+        eventType: body.eventType || "regular", // Save event type (default to 'regular')
         // These are now coming from the frontend in UTC ISO format
         start: new Date(body.start),
         end: new Date(body.end),
         assignments: {
-          create: body.userIds.map((id: number) => ({
+          create: (body.userIds || []).map((id: number) => ({
             user: { connect: { id } },
           })),
         },
@@ -76,7 +86,8 @@ export async function POST(req: Request) {
     const formattedEvent = {
       id: event.id,
       title: event.title,
-      description: event.description, // ✅ FIX: Include the description in the response
+      description: event.description ?? "", // Include the description in the response
+      eventType: event.eventType, // ✅ CRITICAL: Include event type in response
       start: event.start.toISOString(),
       end: event.end.toISOString(),
       assignedTo: event.assignments.map((a) => ({
@@ -92,8 +103,15 @@ export async function POST(req: Request) {
     return NextResponse.json(formattedEvent, { status: 201 });
   } catch (error) {
     console.error("Failed to create event:", error);
+    
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to create event", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }
