@@ -2,7 +2,14 @@
 import { CalendarEvent } from '@/src/types/Event';
 
 export function CustomEvent({ event }: { event: CalendarEvent }) {
-  const assigned = event.assignments?.map(a => a.user?.name).filter(Boolean).join(', ') || '—';
+  const assigned =
+  Array.isArray(event.assignments)
+    ? event.assignments
+        .map((a) => a.user?.name)
+        .filter((name): name is string => Boolean(name))
+        .join(', ')
+    : '—';
+
 
   return (
     <div>
@@ -14,3 +21,4 @@ export function CustomEvent({ event }: { event: CalendarEvent }) {
     </div>
   );
 }
+

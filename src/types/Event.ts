@@ -1,6 +1,7 @@
 // @/src/types/Event.ts
 
 export interface User {
+  nextAvailable: string;
   id: number;
   name: string;
   email: string;
@@ -8,6 +9,7 @@ export interface User {
 }
 
 export interface CalendarEvent {
+  assignments: string ;
   id: number;
   title: string;
   description?: string;

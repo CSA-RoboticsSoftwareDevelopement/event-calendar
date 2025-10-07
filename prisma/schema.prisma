@@ -18,16 +18,15 @@ model User {
 }
 
 model Event {
-  id          Int               @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   title       String
-  description String?           @db.Text
-  eventType   String            @default("regular")
+  description String?
+  eventType   String              @default("regular")
   start       DateTime
   end         DateTime
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
   assignments EventAssignment[]
 }
+
 
 model EventAssignment {
   id      Int   @id @default(autoincrement())

@@ -41,8 +41,8 @@ export default function App() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentUserPage, setCurrentUserPage] = useState(0);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
-  const usersPerPage = windowWidth < 760 ? 9 : windowWidth >= 760 && windowWidth < 1280 ? 15 : 19
+  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 1024); // default width for SSR
+  const usersPerPage = windowWidth < 760 ? 9 : windowWidth >= 760 && windowWidth < 1280 ? 15 : 19;
   console.log(windowWidth)
   //Authentication  
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -50,6 +50,7 @@ export default function App() {
   const [realUname, setRealUname] = useState("");
   //Authentication  
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleResize = () => {
       window.addEventListener('resize', () => {
         setWindowWidth(window.innerWidth)
@@ -522,7 +523,17 @@ export default function App() {
             ),
             agenda: {
               event: (props) => (
-                <CustomAgendaEvent {...props} onEventChanged={refetchEvents} />
+                <CustomAgendaEvent
+                  {...props}
+                  onEventChanged={refetchEvents}
+                  event={{
+                    ...props.event,
+                    assignedTo: props.event.assignedTo?.map(a => ({
+                      user: a.user,
+                      userId: a.userId ?? undefined,
+                    })),
+                  }}
+                />
               ),
             },
           }}

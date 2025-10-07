@@ -15,7 +15,7 @@ interface CalendarEvent {
   description?: string;
   start: string | Date;
   end: string | Date;
-  assignedTo: { user?: User; userId?: string | number }[]; // <-- adjust type
+  assignedTo?: { user?: User; userId?: string | number }[]; // <-- adjust type
 }
 
 export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEvent, onEventChanged?: () => void }) => {
@@ -27,8 +27,9 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
     const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
-    return new Date(localDateTime).toISOString();
+    return date.toISOString();
   };
+
 
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
@@ -254,9 +255,9 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       {/* Edit Modal */}
       {showEditModal && (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-<Dialog.Panel
-  className={`rounded p-6 w-[500px] bg-white text-black`}
->
+          <Dialog.Panel
+            className={`rounded p-6 w-[500px] bg-white text-black`}
+          >
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
 
             {pendingRemovals.length > 0 && (

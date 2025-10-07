@@ -21,7 +21,7 @@ export async function GET() {
       id: event.id,
       title: event.title,
       description: event.description ?? "", // ensure description is always a string
-      eventType: (event as any).eventType || "regular", // Include event type with fallback
+      eventType: (event as unknown as { eventType: string }).eventType || "regular", // Include event type with fallback
       start: event.start.toISOString(), // Convert to ISO UTC string
       end: event.end.toISOString(), // Convert to ISO UTC string
       assignedTo: event.assignments.map((a) => ({
