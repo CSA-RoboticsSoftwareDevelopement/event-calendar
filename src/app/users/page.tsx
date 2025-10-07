@@ -277,14 +277,24 @@ export default function UsersPage() {
             </h2>
           </div>
           <button
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md shadow-md transition-colors"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md shadow-md flex items-center gap-2 transition-colors"
             onClick={() => {
               setShowModal(true);
               toast.success('Ready to add new user!');
             }}
           >
-            + Add User
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              width="24px"
+              viewBox="0 -960 960 960"
+              fill="#FFFFFF"
+            >
+              <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z" />
+            </svg>
+            Add User
           </button>
+
         </div>
 
         {loading ? (
@@ -331,18 +341,39 @@ export default function UsersPage() {
                               });
                               setShowModal(true);
                             }}
-                            className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
+                            className="text-blue-600 hover:text-blue-800 text-sm sm:text-base flex items-center justify-center"
                             title="Edit user"
                           >
-                            <FilePen className="w-5 h-5" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              height="24px"
+                              width="24px"
+                              viewBox="0 -960 960 960"
+                              fill="#3B82F6" // Blue color to match text-blue-600
+                              className="w-5 h-5"
+                            >
+                              <path d="M560-80v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T903-300L683-80H560Zm300-263-37-37 37 37ZM620-140h38l121-122-18-19-19-18-122 121v38ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v120h-80v-80H520v-200H240v640h240v80H240Zm280-400Zm241 199-19-18 37 37-18-19Z" />
+                            </svg>
                           </button>
+
+
                           <button
                             onClick={() => deleteUser(user.id)}
-                            className="text-red-600 hover:text-red-800 text-sm sm:text-base"
+                            className="text-red-600 hover:text-red-800 text-sm sm:text-base flex items-center justify-center"
                             title="Delete user"
                           >
-                            🗑️
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              height="24px"
+                              width="24px"
+                              viewBox="0 -960 960 960"
+                              fill="#DC2626" // Red-600 to match text-red-600
+                              className="w-5 h-5"
+                            >
+                              <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
+                            </svg>
                           </button>
+
                         </div>
                       </td>
                     </tr>
