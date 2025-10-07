@@ -363,22 +363,43 @@ export default function EventsPage() {
                       </td>
                       <td className="py-3 text-center border border-gray-300">
                         <div className="flex justify-center gap-3">
+                          {/* Edit Button */}
                           <button
                             onClick={() => handleEditClick(event)}
-                            className="text-blue-500 hover:text-blue-800"
+                            className="text-blue-500 hover:text-blue-800 flex items-center justify-center"
                             title="Edit"
                           >
-                            <Pencil className="w-4 h-4" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              height="24px"
+                              width="24px"
+                              viewBox="0 -960 960 960"
+                              fill="#3B82F6" // Blue-500
+                              className="w-5 h-5"
+                            >
+                              <path d="M560-80v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T903-300L683-80H560Zm300-263-37-37 37 37ZM620-140h38l121-122-18-19-19-18-122 121v38ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v120h-80v-80H520v-200H240v640h240v80H240Zm280-400Zm241 199-19-18 37 37-18-19Z" />
+                            </svg>
                           </button>
+
+                          {/* Delete Button */}
                           <button
                             onClick={() => {
                               setEventToDelete(event);
                               setShowDeleteModal(true);
                             }}
-                            className="text-red-500 hover:text-red-800"
+                            className="text-red-500 hover:text-red-800 flex items-center justify-center"
                             title="Delete"
                           >
-                            <Trash className="w-4 h-4" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              height="24px"
+                              width="24px"
+                              viewBox="0 -960 960 960"
+                              fill="#DC2626" // Red-500
+                              className="w-5 h-5"
+                            >
+                              <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
+                            </svg>
                           </button>
                         </div>
                       </td>
