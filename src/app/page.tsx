@@ -483,13 +483,12 @@ export default function App() {
               const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
               const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
               const eventTypeLabel = event.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular';
-              
+
               return (
                 <Tippy
                   content={
                     <div className="p-2 text-sm">
                       <p className="font-semibold mb-1">{event.title}</p>
-                      <p className="text-xs mb-1">{eventTypeLabel}</p>
                       {event.assignedTo && event.assignedTo.length > 0 && (
                         <p className="text-xs">
                           <strong>Assigned to:</strong>{' '}
@@ -552,27 +551,14 @@ export default function App() {
             {/* Toggle Switch for Event Type */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Event Type</label>
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${eventType === 'regular' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  📅 Regular
-                </span>
-                <button
-                  type="button"
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                    eventType === 'holiday' ? 'bg-red-500' : 'bg-gray-300'
-                  }`}
-                  onClick={() => setEventType(eventType === 'regular' ? 'holiday' : 'regular')}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      eventType === 'holiday' ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <span className={`text-sm font-medium ${eventType === 'holiday' ? 'text-red-600' : 'text-gray-500'}`}>
-                  🏖️ Holiday
-                </span>
-              </div>
+              <select
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value as 'regular' | 'holiday')}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="regular">Regular Event</option>
+                <option value="holiday">Public Holiday</option>
+              </select>
             </div>
 
             {/* Input field for the event title with a label */}
