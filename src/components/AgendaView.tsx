@@ -22,6 +22,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const [showEditModal, setShowEditModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+  const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false);
 
   const toUTCISOString = (localDateTime: string | Date) => {
     const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
@@ -214,17 +215,40 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </span>
       </div>
 
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
       <div className="flex-shrink-0 flex items-center gap-2 mt-2 md:mt-0 md:ml-4">
-        <span title="Modify">
-          <FilePen
-            className="w-4 h-4 text-blue-600 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              resetForm();
-              setShowEditModal(true);
-            }}
-          />
-        </span>
+          {/* Mark Completed Icon */}
+          {!formData.title.includes("(Event Completed)") && (
+            <span
+              title="Mark Completed"
+              className="w-5 h-5 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent opening event details modal
+                setShowCompleteConfirmModal(true); // Show modal
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height="100%"
+                width="100%"
+                viewBox="0 -960 960 960"
+                fill="#5bb450"
+              >
+                <path d="M438-226 296-368l58-58 84 84 168-168 58 58-226 226ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+              </svg>
+            </span>
+          )}
+
+          {/* Modify Icon */}
+          <span title="Modify">
+            <FilePen
+              className="w-5 h-5 text-blue-600 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditModal(true);
+              }}
+            />
+          </span>
 
         <span title="Delete">
           <Trash2
@@ -235,6 +259,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             }}
           />
         </span>
+        </div>
       </div>
 
       {showDeleteModal && (
@@ -386,36 +411,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             </div>
 
             <div className="flex justify-between mt-6 flex-wrap gap-2">
-              {!formData.title.includes("(Event Completed)") && (
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                  onClick={async () => {
-                    const toastId = toast.loading("Marking as completed...");
-                    try {
-                      const res = await fetch(`/api/events/${event.id}`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "markCompleted" }),
-                      });
-
-                      if (!res.ok) throw new Error("Failed to mark event as completed");
-
-                      setShowEditModal(false);
-                      toast.success("Event marked as completed!", { id: toastId });
-                      if (onEventChanged) onEventChanged();
-                    } catch (err) {
-                      console.error(err);
-                      toast.error(
-                        err instanceof Error ? err.message : "Failed to mark completed",
-                        { id: toastId }
-                      );
-                    }
-                  }}
-                  type="button"
-                >
-                  Mark Completed
-                </button>
-              )}
+           
 
               <div className="flex gap-2">
                 <button
