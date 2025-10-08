@@ -555,11 +555,17 @@ export default function App() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="p-6 rounded shadow-md w-[90%] max-w-md sm:w-full bg-white text-black">
+        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 p-2 sm:p-4">
+          <div
+            className="
+        relative bg-white text-black rounded-lg shadow-lg 
+        w-full sm:w-[500px] max-h-[80vh] overflow-y-auto 
+        p-6
+      "
+          >
             <h2 className="text-lg font-semibold mb-4">Create Event</h2>
 
-            {/* Toggle Switch for Event Type */}
+            {/* Event Type */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Event Type</label>
               <select
@@ -572,57 +578,63 @@ export default function App() {
               </select>
             </div>
 
-            {/* Input field for the event title with a label */}
+            {/* Title */}
             <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
             <input
               id="event-title"
               type="text"
               placeholder="Event Title"
-              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
+              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
 
-            {/* Input field for the event description with a label */}
+            {/* Description */}
             <label htmlFor="event-description" className="block text-sm font-medium mb-1 mt-2">Description</label>
             <textarea
               id="event-description"
               placeholder="Event Description"
-              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
+              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500 resize-y"
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
             />
 
-            {/* Input field for the start time with a label */}
-            <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
-            <input
-              id="event-start"
-              type="datetime-local"
-              className="w-full mb-2 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500"
-              value={start}
-              onChange={e => setStart(e.target.value)}
-            />
+            {/* Start & End Time */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+                <input
+                  id="event-start"
+                  type="datetime-local"
+                  className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500"
+                  value={start}
+                  onChange={e => setStart(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+                <input
+                  id="event-end"
+                  type="datetime-local"
+                  className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500"
+                  value={end}
+                  onChange={e => setEnd(e.target.value)}
+                />
+              </div>
+            </div>
 
-            {/* Input field for the end time with a label */}
-            <label htmlFor="event-end" className="block text-sm font-medium mb-1 mt-2">End Time</label>
-            <input
-              id="event-end"
-              type="datetime-local"
-              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-xs outline-none hover:border-slate-500 "
-              value={end}
-              onChange={e => setEnd(e.target.value)}
-            />
-
-            {/* User assignment section with a label */}
-            <label className="block  font-medium  text-sm">Assign to (based on availability)</label>
+            {/* Assigned Users */}
+            <label className="block font-medium text-sm mt-2">Assign to (based on availability)</label>
             {availableUsers.length === 0 && (
-              <p className="text-[11px] my-1 text-red-500 ">Select start & end time to load users.</p>
+              <p className="text-[11px] my-1 text-red-500">
+                Select start & end time to load users.
+              </p>
             )}
 
             <select
               multiple
-              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-sm outline-none hover:border-slate-500"
+              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500"
               value={selectedUsers.map(String)}
               onChange={e =>
                 setSelectedUsers(Array.from(e.target.selectedOptions, option => Number(option.value)))
@@ -644,26 +656,25 @@ export default function App() {
                         ? `(Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
                         : '(Available)'
                       : ''}
-
-
                   </option>
                 );
               })}
             </select>
 
-            <div className="flex justify-end items-center gap-2">
+            {/* Buttons */}
+            <div className="flex justify-end items-center gap-2 sticky bottom-0 bg-white pt-2 mt-2 border-t">
               <button
                 onClick={() => {
                   setShowModal(false);
                   setEventType('regular');
                 }}
-                className="px-4 py-2 bg-gray-400 rounded text-white"
+                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
               >
                 Create
               </button>
@@ -671,6 +682,7 @@ export default function App() {
           </div>
         </div>
       )}
+
 
       {/* Event Details Modal */}
       {selectedEvent && (

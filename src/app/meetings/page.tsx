@@ -40,6 +40,7 @@ export default function EventsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterValue, setFilterValue] = useState("all");
+  const [eventTimeFilter, setEventTimeFilter] = useState("upcoming");
   const eventsPerPage = 15;
   const [hasFetched, setHasFetched] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -126,6 +127,10 @@ export default function EventsPage() {
 
   // Filters events based on search term and designation filter
   const filteredEvents = events.filter((event) => {
+    // Hide past events unless user chose "all"
+    if (eventTimeFilter === "upcoming" && new Date(event.end).getTime() < Date.now()) {
+      return false;
+    }
     const matchesSearch =
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase()) || // Added description to search
@@ -289,7 +294,7 @@ export default function EventsPage() {
             </button>
 
             <h2 className="text-2xl text-black mb-6 mt-2 font-semibold">
-              View All Events
+              View Events
             </h2>
           </div>
 
@@ -302,6 +307,13 @@ export default function EventsPage() {
                 placeholder="Search events or designations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault(); // prevent form submit / reload
+                    // Optional: trigger filtering manually (if you want)
+                    setSearchTerm((prev) => prev.trim());
+                  }
+                }}
                 className="pl-10 pr-4 py-2 h-11 w-full md:w-[250px] bg-white lg:w-[300px] border border-slate-300 text-xs outline-none hover:border-slate-400  rounded-2xl text-black"
               />
             </div>
@@ -318,6 +330,15 @@ export default function EventsPage() {
                   {designation}
                 </option>
               ))}
+            </select>
+            {/* Event Time Filter Dropdown */}
+            <select
+              value={eventTimeFilter}
+              onChange={(e) => setEventTimeFilter(e.target.value)}
+              className="px-2 py-2 h-11 w-full lg:w-[300px] md:w-[250px] border border-slate-300 text-xs outline-none hover:border-slate-400 rounded-2xl text-black bg-white"
+            >
+              <option value="upcoming">Upcoming Events</option>
+              <option value="all">All Events</option>
             </select>
           </div>
         </div>

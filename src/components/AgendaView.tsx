@@ -254,9 +254,17 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
       {/* Edit Modal */}
       {showEditModal && (
-        <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+        <Dialog
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 p-2 sm:p-4"
+        >
           <Dialog.Panel
-            className={`rounded p-6 w-[500px] bg-white text-black`}
+            className="
+        rounded-lg bg-white text-black w-full sm:w-[500px] 
+        max-h-[80vh] overflow-y-auto p-6
+        shadow-lg
+      "
           >
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
 
@@ -267,8 +275,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             )}
 
             <div className="mt-4 space-y-4">
+              {/* Title */}
               <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
-
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded"
@@ -276,9 +284,9 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Title"
               />
-              {/* Added a textarea for the event description */}
-              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
 
+              {/* Description */}
+              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
               <textarea
                 className="w-full border px-3 py-2 rounded resize-y"
                 value={formData.description}
@@ -286,33 +294,39 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 placeholder="Description"
                 rows={3}
               />
-              <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
 
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={toLocalDateTimeString(formData.start)}
-                onChange={e => setFormData({ ...formData, start: e.target.value })}
-              />
-              <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+              {/* Start and End Time */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full border px-3 py-2 rounded"
+                    value={toLocalDateTimeString(formData.start)}
+                    onChange={e => setFormData({ ...formData, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full border px-3 py-2 rounded"
+                    value={toLocalDateTimeString(formData.end)}
+                    onChange={e => setFormData({ ...formData, end: e.target.value })}
+                  />
+                </div>
+              </div>
 
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={toLocalDateTimeString(formData.end)}
-                onChange={e => setFormData({ ...formData, end: e.target.value })}
-              />
+              {/* Assigned Users */}
               <label className="block mb-1 font-medium">Assign to</label>
 
-
-              {/* Currently Assigned Users */}
               {formData.assignedTo.length > 0 && (
                 <div className="mt-2 p-2 bg-gray-100 rounded">
                   <p className="text-sm font-semibold">Currently Assigned:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {formData.assignedTo.map((userId) => {
                       const user = users.find(u => String(u.id) === userId);
-                      if (!user) return null; // skip if user is not found
+                      if (!user) return null;
                       return (
                         <li key={user.id} className="flex items-center justify-between">
                           <span>{user.name}</span>
@@ -341,16 +355,15 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                   setFormData(prev => ({
                     ...prev,
                     assignedTo: [
-                      ...prev.assignedTo, // keep existing
+                      ...prev.assignedTo,
                       ...Array.from(e.target.selectedOptions)
                         .map(o => o.value)
                         .filter((v): v is string => v !== undefined)
-                        .filter(v => !prev.assignedTo.includes(v)), // avoid duplicates
+                        .filter(v => !prev.assignedTo.includes(v)),
                     ],
                   }))
                 }
               >
-
                 {users.map(user => (
                   <option
                     key={user.id}
@@ -361,53 +374,58 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                   </option>
                 ))}
               </select>
-
-
-
             </div>
 
-            <div className="flex justify-end mt-4 gap-2">
-              <button className="bg-gray-200 px-4 py-2 rounded" onClick={() => setShowEditModal(false)}>Cancel</button>
+            {/* Buttons */}
+            <div className="flex justify-end mt-6 gap-2">
               <button
-                className="bg-green-600 text-white px-4 py-2 rounded"
+                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
                 onClick={() => setShowSaveConfirmModal(true)}
               >
                 Save
               </button>
-              {showSaveConfirmModal && (
-                <Dialog
-                  open={showSaveConfirmModal}
-                  onClose={() => setShowSaveConfirmModal(false)}
-                  className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
-                >
-                  <Dialog.Panel className="bg-white rounded-lg p-6 w-96">
-                    <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
-                    <p className="mt-2">Are you sure you want to save changes to this event?</p>
-                    <div className="flex justify-end mt-4 gap-2">
-                      <button
-                        className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
-                        onClick={() => setShowSaveConfirmModal(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
-                        onClick={async () => {
-                          setShowSaveConfirmModal(false);
-                          await handleSave();
-                        }}
-                      >
-                        Confirm Save
-                      </button>
-                    </div>
-                  </Dialog.Panel>
-                </Dialog>
-              )}
-
             </div>
+
+            {/* Save Confirmation Dialog */}
+            {showSaveConfirmModal && (
+              <Dialog
+                open={showSaveConfirmModal}
+                onClose={() => setShowSaveConfirmModal(false)}
+                className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 p-2"
+              >
+                <Dialog.Panel className="bg-white rounded-lg p-6 w-full sm:w-96">
+                  <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
+                  <p className="mt-2">Are you sure you want to save changes to this event?</p>
+                  <div className="flex justify-end mt-4 gap-2">
+                    <button
+                      className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                      onClick={() => setShowSaveConfirmModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
+                      onClick={async () => {
+                        setShowSaveConfirmModal(false);
+                        await handleSave();
+                      }}
+                    >
+                      Confirm Save
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Dialog>
+            )}
           </Dialog.Panel>
         </Dialog>
       )}
+
     </div>
   );
 };
