@@ -22,6 +22,7 @@ type User = {
 
 // Added 'description' to the Event type
 type Event = {
+  status: string;
   id: number;
   title: string;
   start: string;
@@ -57,7 +58,7 @@ export default function EventsPage() {
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
     const date =
@@ -75,7 +76,7 @@ export default function EventsPage() {
       date.getDate()
     )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
-  
+
   // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
     const fetchUsers = async () => {
@@ -191,33 +192,33 @@ export default function EventsPage() {
   };
 
   // Update handleEditClick
- const handleEditClick = (event: Event) => {
-  setCurrentEvent(event);
-  setFormData({
-    title: event.title,
-    start: toLocalDateTimeString(event.start),
-    end: toLocalDateTimeString(event.end),
-    description: event.description,
-    assignedTo: event.assignedTo?.map((a) => String(a.userId)) || [], // Use userId instead of user.id
-  });
-  setShowEditModal(true);
-};
+  const handleEditClick = (event: Event) => {
+    setCurrentEvent(event);
+    setFormData({
+      title: event.title,
+      start: toLocalDateTimeString(event.start),
+      end: toLocalDateTimeString(event.end),
+      description: event.description,
+      assignedTo: event.assignedTo?.map((a) => String(a.userId)) || [], // Use userId instead of user.id
+    });
+    setShowEditModal(true);
+  };
   // Simplify handleRemoveAssignedUser
-const handleRemoveAssignedUser = (userId: number) => {
-  const userIdStr = String(userId);
-  setFormData((prev) => ({
-    ...prev,
-    assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
-  }));
-};
-// Add this inside the Edit Modal section to debug
-useEffect(() => {
-  if (showEditModal) {
-    console.log('FormData assignedTo:', formData.assignedTo);
-    console.log('Available users:', users);
-    console.log('Current event assigned users:', currentEvent?.assignedTo);
-  }
-}, [showEditModal, formData.assignedTo, users, currentEvent]);
+  const handleRemoveAssignedUser = (userId: number) => {
+    const userIdStr = String(userId);
+    setFormData((prev) => ({
+      ...prev,
+      assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
+    }));
+  };
+  // Add this inside the Edit Modal section to debug
+  useEffect(() => {
+    if (showEditModal) {
+      console.log('FormData assignedTo:', formData.assignedTo);
+      console.log('Available users:', users);
+      console.log('Current event assigned users:', currentEvent?.assignedTo);
+    }
+  }, [showEditModal, formData.assignedTo, users, currentEvent]);
   // Handles saving the updated event data
   const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
@@ -267,7 +268,7 @@ useEffect(() => {
       eventsContainerRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [currentPage]);
-  
+
   return (
     <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
       <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
@@ -353,6 +354,7 @@ useEffect(() => {
                     <th className="w-[10%] border border-gray-300">Time</th>
                     <th className="w-[15%] border border-gray-300">Event</th>
                     <th className="w-[30%] border border-gray-300">Description</th>
+                    <th className="w-[8%] border border-gray-300">Status</th>
                     <th className="w-[10%] border border-gray-300">Assigned To</th>
                     <th className="w-[12%] border border-gray-300">Designation</th>
                     <th className="w-[8%] border border-gray-300">Actions</th>
@@ -368,6 +370,19 @@ useEffect(() => {
                       </td>
                       <td className="py-3 px-3 font-medium border border-gray-300">{event.title}</td>
                       <td className="py-3 px-3 break-words border border-gray-300">{event.description}</td>
+                      <td className="py-3 text-center border border-gray-300">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${event.status === "Completed"
+                            ? "bg-green-100 text-green-700"
+                            : event.status === "Ongoing"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                            }`}
+                        >
+                          {event.status || "Pending"}
+                        </span>
+                      </td>
+
                       <td className="py-3 px-3 border border-gray-300">
                         {event.assignedTo?.map((a, i) => (
                           <div key={i} className="font-medium">{a.user.name}</div>
@@ -465,6 +480,20 @@ useEffect(() => {
                     <p><span className="font-semibold">📅 Date:</span> {formatDate(event.start)}</p>
                     <p><span className="font-semibold">⏰ Time:</span> {formatTime(event.start)} - {formatTime(event.end)}</p>
                     <p><span className="font-semibold">📝 Description:</span> {event.description}</p>
+                    <p>
+                      <span className="font-semibold">📊 Status:</span>{" "}
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${event.status === "Completed"
+                            ? "bg-green-100 text-green-700"
+                            : event.status === "Ongoing"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                      >
+                        {event.status || "Pending"}
+                      </span>
+                    </p>
+
                     <p>
                       <span className="font-semibold">👤 Assigned To:</span>{" "}
                       {event.assignedTo?.map(a => a.user.name).join(", ")}
