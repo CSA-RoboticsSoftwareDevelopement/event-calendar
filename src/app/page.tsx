@@ -558,8 +558,8 @@ export default function App() {
         <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 p-2 sm:p-4">
           <div
             className="
-        relative bg-white text-black rounded-lg shadow-lg 
-        w-full sm:w-[500px] max-h-[80vh] overflow-y-auto 
+        bg-white text-black rounded-lg shadow-lg 
+        w-full sm:w-[500px] max-w-md 
         p-6
       "
           >
@@ -632,37 +632,39 @@ export default function App() {
               </p>
             )}
 
-            <select
-              multiple
-              className="w-full mb-4 p-2 rounded-md border border-slate-400 text-sm outline-none focus:border-blue-500"
-              value={selectedUsers.map(String)}
-              onChange={e =>
-                setSelectedUsers(Array.from(e.target.selectedOptions, option => Number(option.value)))
-              }
-            >
-              {(availableUsers.length > 0 ? availableUsers : users).map(user => {
-                const isAvailableUser = (u: typeof user): u is UserAvailability =>
-                  'isBusy' in u && 'nextAvailable' in u;
+            <div className="border border-slate-400 rounded-md mb-4 mt-1 max-h-40 overflow-y-auto">
+              <select
+                multiple
+                className="w-full p-2 text-sm outline-none rounded-md"
+                value={selectedUsers.map(String)}
+                onChange={e =>
+                  setSelectedUsers(Array.from(e.target.selectedOptions, option => Number(option.value)))
+                }
+              >
+                {(availableUsers.length > 0 ? availableUsers : users).map(user => {
+                  const isAvailableUser = (u: typeof user): u is UserAvailability =>
+                    'isBusy' in u && 'nextAvailable' in u;
 
-                return (
-                  <option
-                    key={user.id}
-                    value={user.id}
-                    disabled={isAvailableUser(user) && user.isBusy}
-                  >
-                    {user.name}{' '}
-                    {isAvailableUser(user)
-                      ? user.isBusy
-                        ? `(Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
-                        : '(Available)'
-                      : ''}
-                  </option>
-                );
-              })}
-            </select>
+                  return (
+                    <option
+                      key={user.id}
+                      value={user.id}
+                      disabled={isAvailableUser(user) && user.isBusy}
+                    >
+                      {user.name}{' '}
+                      {isAvailableUser(user)
+                        ? user.isBusy
+                          ? `(Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
+                          : '(Available)'
+                        : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
 
             {/* Buttons */}
-            <div className="flex justify-end items-center gap-2 sticky bottom-0 bg-white pt-2 mt-2 border-t">
+            <div className="flex justify-end items-center gap-2 mt-4">
               <button
                 onClick={() => {
                   setShowModal(false);
@@ -682,6 +684,7 @@ export default function App() {
           </div>
         </div>
       )}
+
 
 
       {/* Event Details Modal */}

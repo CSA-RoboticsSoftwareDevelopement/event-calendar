@@ -261,9 +261,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         >
           <Dialog.Panel
             className="
-        rounded-lg bg-white text-black w-full sm:w-[500px] 
-        max-h-[80vh] overflow-y-auto p-6
-        shadow-lg
+        rounded-lg bg-white text-black w-full sm:w-[500px]
+        p-6 shadow-lg
       "
           >
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
@@ -321,8 +320,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
               <label className="block mb-1 font-medium">Assign to</label>
 
               {formData.assignedTo.length > 0 && (
-                <div className="mt-2 p-2 bg-gray-100 rounded">
-                  <p className="text-sm font-semibold">Currently Assigned:</p>
+                <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto">
+                  <p className="text-sm font-semibold mb-1">Currently Assigned:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {formData.assignedTo.map((userId) => {
                       const user = users.find(u => String(u.id) === userId);
@@ -425,6 +424,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           </Dialog.Panel>
         </Dialog>
       )}
+
 
     </div>
   );
