@@ -526,156 +526,173 @@ export default function EventsPage() {
         <Dialog
           open={showEditModal}
           onClose={() => setShowEditModal(false)}
-          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 px-2 sm:px-0 overflow-y-auto"
         >
-          <Dialog.Panel className="bg-white rounded p-6 w-[500px]">
-            <Dialog.Title className="text-lg font-semibold">
+          <Dialog.Panel className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl shadow-lg my-8 sm:my-0">
+            <Dialog.Title className="text-lg font-semibold text-center sm:text-left">
               Edit Event
             </Dialog.Title>
 
             {pendingRemovals.length > 0 && (
-              <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
-                You have {pendingRemovals.length} pending user removal(s) that
-                will be saved when you click Save.
+              <div className="mt-3 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
+                You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
               </div>
             )}
 
             <div className="mt-4 space-y-4">
-              <label
-                htmlFor="event-title"
-                className="block text-sm font-medium mb-1"
-              >
-                Title
-              </label>
+              {/* Title */}
+              <div>
+                <label
+                  htmlFor="event-title"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Title
+                </label>
+                <input
+                  className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  placeholder="Title"
+                />
+              </div>
 
-              <input
-                className="w-full border px-3 py-2 rounded"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                placeholder="Title"
-              />
-              <label
-                htmlFor="event-description"
-                className="block text-sm font-medium mb-1"
-              >
-                Description
-              </label>
-              <textarea
-                className="w-full border px-3 py-2 rounded min-h-[100px]" // Added textarea for a larger input area
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Description"
-              />
-              <label
-                htmlFor="event-start"
-                className="block text-sm font-medium mb-1"
-              >
-                Start Time
-              </label>
+              {/* Description */}
+              <div>
+                <label
+                  htmlFor="event-description"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Description
+                </label>
+                <textarea
+                  className="w-full border px-3 py-2 rounded min-h-[100px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Description"
+                />
+              </div>
 
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={formData.start}
-                onChange={(e) =>
-                  setFormData({ ...formData, start: e.target.value })
-                }
-              />
-              <label
-                htmlFor="event-end"
-                className="block text-sm font-medium mb-1"
-              >
-                End Time
-              </label>
-
-              <input
-                type="datetime-local"
-                className="w-full border px-3 py-2 rounded"
-                value={formData.end}
-                onChange={(e) =>
-                  setFormData({ ...formData, end: e.target.value })
-                }
-              />
-              <label className="block mb-1 font-medium">Assign to </label>
-
-              {currentEvent.assignedTo?.length > 0 && (
-                <div className="mt-2 p-2 bg-gray-100 rounded">
-                  <p className="text-sm font-semibold">Currently Assigned:</p>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    {currentEvent.assignedTo
-                      .filter(
-                        (assignment) =>
-                          !pendingRemovals.includes(String(assignment.userId))
-                      )
-                      .map((assignment, index) => (
-                        <li
-                          key={assignment.userId}
-                          className="flex items-center justify-between"
-                        >
-                          <span>{assignment.user?.name || "Unknown"}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveAssignedUser(assignment.userId);
-                            }}
-                            className="text-gray-500 hover:text-red-600"
-                            title="Remove user"
-                          >
-                            <X size={14} />
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              )}
-
-              <select
-                multiple
-                className="w-full border px-3 py-2 rounded"
-                value={formData.assignedTo}
-                onChange={(e) => {
-                  const newSelected = Array.from(e.target.selectedOptions).map(
-                    (o) => o.value
-                  );
-                  // Append new selections without removing existing ones
-                  setFormData({
-                    ...formData,
-                    assignedTo: Array.from(
-                      new Set([...formData.assignedTo, ...newSelected])
-                    ),
-                  });
-                }}
-              >
-                {users.map((user) => (
-                  <option
-                    key={user.id}
-                    value={user.id}
-                    className={
-                      formData.assignedTo.includes(user.id.toString())
-                        ? "bg-blue-200 font-semibold"
-                        : ""
-                    }
+              {/* Start / End Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="event-start"
+                    className="block text-sm font-medium mb-1"
                   >
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+                    Start Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.start}
+                    onChange={(e) =>
+                      setFormData({ ...formData, start: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="event-end"
+                    className="block text-sm font-medium mb-1"
+                  >
+                    End Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.end}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Assigned Users */}
+              <div>
+                <label className="block mb-1 font-medium">Assign to</label>
+
+                {currentEvent.assignedTo?.length > 0 && (
+                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-40 overflow-y-auto border border-gray-200">
+                    <p className="text-sm font-semibold mb-2">
+                      Currently Assigned:
+                    </p>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      {currentEvent.assignedTo
+                        .filter(
+                          (assignment) =>
+                            !pendingRemovals.includes(String(assignment.userId))
+                        )
+                        .map((assignment) => (
+                          <li
+                            key={assignment.userId}
+                            className="flex items-center justify-between"
+                          >
+                            <span>{assignment.user?.name || "Unknown"}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveAssignedUser(assignment.userId);
+                              }}
+                              className="text-gray-500 hover:text-red-600 transition"
+                              title="Remove user"
+                            >
+                              <X size={14} />
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+
+                <select
+                  multiple
+                  className="w-full border px-3 py-2 rounded mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.assignedTo}
+                  onChange={(e) => {
+                    const newSelected = Array.from(e.target.selectedOptions).map(
+                      (o) => o.value
+                    );
+                    setFormData({
+                      ...formData,
+                      assignedTo: Array.from(
+                        new Set([...formData.assignedTo, ...newSelected])
+                      ),
+                    });
+                  }}
+                >
+                  {users.map((user) => (
+                    <option
+                      key={user.id}
+                      value={user.id}
+                      className={
+                        formData.assignedTo.includes(user.id.toString())
+                          ? "bg-blue-200 font-semibold"
+                          : ""
+                      }
+                    >
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="flex justify-end mt-4 gap-2">
+            {/* Footer */}
+            <div className="flex justify-end mt-6 gap-2">
               <button
-                className="bg-gray-200 px-4 py-2 rounded"
+                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
                 onClick={() => setShowEditModal(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                 onClick={() => setShowSaveModal(true)}
               >
                 Save
@@ -684,6 +701,7 @@ export default function EventsPage() {
           </Dialog.Panel>
         </Dialog>
       )}
+
       {showSaveModal && currentEvent && (
         <Dialog
           open={showSaveModal}
