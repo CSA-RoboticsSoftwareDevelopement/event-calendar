@@ -24,6 +24,8 @@ model Event {
   eventType   String              @default("regular")
   start       DateTime
   end         DateTime
+ 
+  status      String    @default("pending")
   assignments EventAssignment[]
 }
 

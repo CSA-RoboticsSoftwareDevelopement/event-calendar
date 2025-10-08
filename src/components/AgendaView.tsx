@@ -376,20 +376,72 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end mt-6 gap-2">
-              <button
-                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-                onClick={() => setShowSaveConfirmModal(true)}
-              >
-                Save
-              </button>
-            </div>
+<div className="flex justify-between mt-6 flex-wrap gap-2">
+  {/* Mark Completed Button - Left Side */}
+  {!formData.title.includes("(Event Completed)") && (
+  <button
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+  onClick={async () => {
+    if (formData.title.includes("(Event Completed)")) {
+      toast("Event already marked as completed");
+      return;
+    }
+
+    const toastId = toast.loading("Marking as completed...");
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markCompleted" }),
+      });
+
+      if (!res.ok) throw new Error("Failed to mark event as completed");
+
+      const data = await res.json();
+
+      // Optimistically update the title in the modal
+      setFormData(prev => ({
+        ...prev,
+        title: `${prev.title.trim()} (Event Completed)`,
+      }));
+
+      toast.success("Event marked as completed!", { id: toastId });
+
+      // Update parent to refresh calendar
+      if (onEventChanged) onEventChanged();
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to mark completed",
+        { id: toastId }
+      );
+    }
+  }}
+>
+  Mark Completed
+</button>
+
+  )}
+
+  {/* Right Side Buttons */}
+  <div className="flex gap-2">
+    <button
+      className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
+      onClick={() => setShowEditModal(false)}
+    >
+      Cancel
+    </button>
+
+    <button
+      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+      onClick={() => setShowSaveConfirmModal(true)}
+    >
+      Save
+    </button>
+  </div>
+</div>
+
+
 
             {/* Save Confirmation Dialog */}
             {showSaveConfirmModal && (

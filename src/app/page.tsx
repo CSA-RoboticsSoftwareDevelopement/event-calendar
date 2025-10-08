@@ -272,6 +272,32 @@ export default function App() {
     });
   };
 
+const handleMarkCompleted = async (eventId: number) => {
+  try {
+    const res = await fetch(`/api/events/${eventId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "markCompleted" }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(`Failed to update event status: ${errorData.error || "Unknown error"}`);
+      return;
+    }
+
+    const data = await res.json();
+    alert("✅ Event marked as completed!");
+    await refetchEvents();
+    setSelectedEvent(null);
+  } catch (error) {
+    alert("Something went wrong while marking event completed.");
+  }
+};
+
+
+
+
   return (
     <div
       className="min-h-screen bg-white text-black w-[99vw] md:w-[95vw] lg:w-[84vw] mx-auto"
@@ -480,39 +506,35 @@ export default function App() {
 
             ),
 
-            event: ({ event }) => {
-              const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
-              const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
-              const eventTypeLabel = event.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular';
+event: ({ event }) => {
+  const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
+  const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
 
-              return (
-                <Tippy
-                  content={
-                    <div className="p-2 text-sm">
-                      <p className="font-semibold mb-1">{event.title}</p>
-                      {event.assignedTo && event.assignedTo.length > 0 && (
-                        <p className="text-xs">
-                          <strong>Assigned to:</strong>{' '}
-                          {event.assignedTo.map(u => u.user?.name).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  }
-                  theme="light-border"
-                  placement="top"
-                >
-                  <div
-                    className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
-                    style={{ backgroundColor }}
-                    title=""
-                  >
-                    {truncatedTitle}
-                  </div>
-                </Tippy>
-
-              );
-            },
-
+  return (
+    <Tippy
+      content={
+        <div className="p-2 text-sm">
+          <p className="font-semibold mb-1">{event.title}</p>
+          {event.assignedTo && event.assignedTo.length > 0 && (
+            <p className="text-xs">
+              <strong>Assigned to:</strong>{' '}
+              {event.assignedTo.map(u => u.user?.name).join(', ')}
+            </p>
+          )}
+        </div>
+      }
+      theme="light-border"
+      placement="top"
+    >
+      <div
+        className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
+        style={{ backgroundColor }}
+      >
+        {truncatedTitle} {event.isCompleted && <span className="text-green-200">(Event Completed)</span>}
+      </div>
+    </Tippy>
+  );
+},
             dateCellWrapper: (props) => (
               <div
                 {...props}
@@ -688,30 +710,59 @@ export default function App() {
 
 
       {/* Event Details Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
-            <h2 className="text-lg font-semibold mb-4">Event Details</h2>
-            <p><strong>Type:</strong> {selectedEvent.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular Event'}</p>
-            <p><strong>Title:</strong> {selectedEvent.title}</p>
-            {/* Display the new description field */}
-            <p><strong>Description:</strong> {selectedEvent.description || '—'}</p>
-            <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
-            <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+{/* Event Details Modal */}
+{selectedEvent && (
+  <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+    <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+      <h2 className="text-lg font-semibold mb-4">Event Details</h2>
 
-            <p><strong>Assigned to:</strong> {selectedEvent.assignedTo?.map(u => u.user?.name).join(', ') || '—'}</p>
+      <p>
+        <strong>Type:</strong>{" "}
+        {selectedEvent.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular Event"}
+      </p>
 
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Title with "Event Completed" if marked */}
+{/* Title with "Event Completed" if marked */}
+<p>
+  <strong>Title:</strong>{" "}
+  {selectedEvent.title}{" "}
+  {selectedEvent.isCompleted && <span className="text-green-600">(Event Completed)</span>}
+</p>
+
+
+      <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
+      <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+      <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+
+      <p>
+        <strong>Assigned to:</strong>{" "}
+        {selectedEvent.assignedTo?.map(u => u.user?.name).join(", ") || "—"}
+      </p>
+
+      <div className="flex justify-end gap-3 mt-6">
+        {/* Mark Completed Button */}
+        {!selectedEvent.isCompleted && (
+          <button
+            onClick={() => handleMarkCompleted(selectedEvent.id)}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Mark Completed
+          </button>
+        )}
+
+        {/* Close Button */}
+        <button
+          onClick={() => setSelectedEvent(null)}
+          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
 
       {/* Daily Events Modal */}
       {showDayEventsModal && (
