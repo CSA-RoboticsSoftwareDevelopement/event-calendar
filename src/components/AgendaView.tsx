@@ -8,14 +8,13 @@ interface User {
   name: string;
 }
 
-// Assumed type definition based on the data structure
 interface CalendarEvent {
   id: string | number;
   title: string;
   description?: string;
   start: string | Date;
   end: string | Date;
-  assignedTo?: { user?: User; userId?: string | number }[]; // <-- adjust type
+  assignedTo?: { user?: User; userId?: string | number }[];
 }
 
 export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEvent, onEventChanged?: () => void }) => {
@@ -24,12 +23,10 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const [users, setUsers] = useState<User[]>([]);
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
 
-  // Helpers for time conversion
   const toUTCISOString = (localDateTime: string | Date) => {
     const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
     return date.toISOString();
   };
-
 
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
@@ -37,30 +34,31 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
-  // State to manage form data for editing, including the new description field.
   const [formData, setFormData] = useState({
     title: event.title,
-    description: event.description, // Initializing with the event's description
+    description: event.description || '',
     start: event.start,
     end: event.end,
-    assignedTo: [] as string[], // Explicitly type as string array
+    assignedTo: [] as string[],
   });
 
+  // Initialize form data when event changes
   useEffect(() => {
     const assignedIds = event.assignedTo
       ?.map(a => a.user?.id ?? a.userId)
       .filter(Boolean)
       .map(String) || [];
 
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      title: event.title,
+      description: event.description || '',
+      start: event.start,
+      end: event.end,
       assignedTo: assignedIds,
-    }));
+    });
   }, [event]);
 
-  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
-
-  // Fetch all users for the dropdown
+  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -86,9 +84,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           <p>Are you sure you want to delete this event?</p>
           <div className="flex justify-end space-x-2">
             <button
-              onClick={() => {
-                toast.dismiss(t.id);
-              }}
+              onClick={() => toast.dismiss(t.id)}
               className="px-3 py-1.5 text-sm rounded-md bg-gray-200 hover:bg-gray-300"
             >
               Cancel
@@ -121,76 +117,92 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       </div>
     ));
   };
+
   const handleRemoveAssignedUser = (userId?: string | number) => {
     if (!userId) return;
-
     const userIdStr = String(userId);
-
-    // Optimistically remove from formData for instant UI reflection
-    setFormData(prev => ({
-      ...prev,
-      assignedTo: prev.assignedTo.filter(id => id !== userIdStr),
-    }));
-
-    // Track pending removals for API
-    setPendingRemovals(prev => [...prev, userIdStr]);
-
-    toast.success('User marked for removal. Changes will be saved when you click Save.');
+    
+    setFormData(prev => {
+      const newAssignedTo = prev.assignedTo.filter(id => id !== userIdStr);
+      console.log('Removing user:', userIdStr);
+      console.log('Previous assignedTo:', prev.assignedTo);
+      console.log('New assignedTo:', newAssignedTo);
+      return {
+        ...prev,
+        assignedTo: newAssignedTo,
+      };
+    });
   };
 
   const handleSave = async () => {
-    const toastId = toast.loading('Saving changes...');
-
+    const toastId = toast.loading("Saving changes...");
     try {
-      // First process pending removals
-      if (pendingRemovals.length > 0) {
-        await Promise.all(
-          pendingRemovals.map(userId =>
-            fetch(`/api/events/${event.id}/assignments`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId }),
-            })
-          )
-        );
-      }
+      // Convert to numbers and filter out invalid ones
+      const finalAssignedTo = formData.assignedTo
+        .map(id => Number(id))
+        .filter(id => !isNaN(id));
 
-      // Then update the event with UTC times
+      console.log('=== SAVE DEBUG ===');
+      console.log('formData.assignedTo (strings):', formData.assignedTo);
+      console.log('finalAssignedTo (numbers):', finalAssignedTo);
+
       const payload = {
-        ...formData,
-        // Added the description to the payload
-        description: formData.description,
+        title: formData.title,
+        description: formData.description || null,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
-        assignedTo: formData.assignedTo.map(id => Number(id)),
+        assignedTo: finalAssignedTo, // This will be [] if all users removed
       };
 
+      console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+
       const res = await fetch(`/api/events/${event.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        setPendingRemovals([]);
-        setShowEditModal(false);
-        toast.success('Event updated successfully!', { id: toastId });
-        if (onEventChanged) onEventChanged();
-      } else {
+      if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || 'Failed to update event');
+        console.error('Server response:', errorText);
+        throw new Error(errorText || "Failed to update event");
+      }
+
+      const responseData = await res.json();
+      console.log('Success response:', responseData);
+
+      setShowEditModal(false);
+      toast.success("Event updated successfully!", { id: toastId });
+      
+      // Refresh the calendar
+      if (onEventChanged) {
+        onEventChanged();
       }
     } catch (err) {
-      console.error('Update error:', err);
-      toast.error(err instanceof Error ? err.message : 'Error saving changes. Please try again.', { id: toastId });
+      console.error("Update error:", err);
+      toast.error(err instanceof Error ? err.message : "Error saving changes.", { id: toastId });
     }
+  };
+
+  const resetForm = () => {
+    const assignedIds = event.assignedTo
+      ?.map(a => a.user?.id ?? a.userId)
+      .filter(Boolean)
+      .map(String) || [];
+
+    setFormData({
+      title: event.title,
+      description: event.description || '',
+      start: event.start,
+      end: event.end,
+      assignedTo: assignedIds,
+    });
   };
 
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
       <div className="flex-1 min-w-0">
         <strong className="block truncate">{event.title}</strong>
-        {/* Display the description on the main event card */}
         {event.description && (
           <p className="text-sm text-gray-700 mt-1 truncate">
             {event.description}
@@ -208,6 +220,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             className="w-4 h-4 text-blue-600 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
+              resetForm();
               setShowEditModal(true);
             }}
           />
@@ -218,13 +231,12 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             className="w-4 h-4 text-red-600 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              handleDeleteConfirmation(); // Directly show toast confirmation
+              handleDeleteConfirmation();
             }}
           />
         </span>
       </div>
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <Dialog
           open={showDeleteModal}
@@ -252,198 +264,181 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </Dialog>
       )}
 
-      {/* Edit Modal */}
       {showEditModal && (
         <Dialog
           open={showEditModal}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => {
+            resetForm();
+            setShowEditModal(false);
+          }}
           className="fixed inset-0 flex justify-center items-center z-50 bg-black/50 p-2 sm:p-4"
         >
-          <Dialog.Panel
-            className="
-        rounded-lg bg-white text-black w-full sm:w-[500px]
-        p-6 shadow-lg
-      "
-          >
+          <Dialog.Panel className="rounded-lg bg-white text-black w-full sm:w-[500px] p-6 shadow-lg">
             <Dialog.Title className="text-lg font-semibold">Edit Event</Dialog.Title>
 
-            {pendingRemovals.length > 0 && (
-              <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
-                You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
-              </div>
-            )}
-
             <div className="mt-4 space-y-4">
-              {/* Title */}
-              <label htmlFor="event-title" className="block text-sm font-medium mb-1">Title</label>
-              <input
-                type="text"
-                className="w-full border px-3 py-2 rounded"
-                value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Title"
-              />
+              <div>
+                <label className="block text-sm font-medium mb-1">Title</label>
+                <input
+                  type="text"
+                  className="w-full border px-3 py-2 rounded"
+                  value={formData.title}
+                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Title"
+                />
+              </div>
 
-              {/* Description */}
-              <label htmlFor="event-description" className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                className="w-full border px-3 py-2 rounded resize-y"
-                value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Description"
-                rows={3}
-              />
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  className="w-full border px-3 py-2 rounded resize-y"
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Description"
+                  rows={3}
+                />
+              </div>
 
-              {/* Start and End Time */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time</label>
+                  <label className="block text-sm font-medium mb-1">Start Time</label>
                   <input
                     type="datetime-local"
                     className="w-full border px-3 py-2 rounded"
                     value={toLocalDateTimeString(formData.start)}
-                    onChange={e => setFormData({ ...formData, start: e.target.value })}
+                    onChange={e => setFormData(prev => ({ ...prev, start: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
+                  <label className="block text-sm font-medium mb-1">End Time</label>
                   <input
                     type="datetime-local"
                     className="w-full border px-3 py-2 rounded"
                     value={toLocalDateTimeString(formData.end)}
-                    onChange={e => setFormData({ ...formData, end: e.target.value })}
+                    onChange={e => setFormData(prev => ({ ...prev, end: e.target.value }))}
                   />
                 </div>
               </div>
 
-              {/* Assigned Users */}
-              <label className="block mb-1 font-medium">Assign to</label>
+              <div>
+                <label className="block mb-1 font-medium">Assign to</label>
 
-              {formData.assignedTo.length > 0 && (
-                <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto">
-                  <p className="text-sm font-semibold mb-1">Currently Assigned:</p>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    {formData.assignedTo.map((userId) => {
-                      const user = users.find(u => String(u.id) === userId);
-                      if (!user) return null;
-                      return (
-                        <li key={user.id} className="flex items-center justify-between">
-                          <span>{user.name}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveAssignedUser(user.id);
-                            }}
-                            className="text-gray-500 hover:text-red-600"
-                            title="Remove user"
-                          >
-                            <X size={14} />
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
+                {formData.assignedTo.length > 0 && (
+                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
+                    <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
+                    <ul className="list-none text-sm space-y-1">
+                      {formData.assignedTo.map((userId) => {
+                        const user = users.find(u => String(u.id) === userId);
+                        if (!user) return null;
+                        return (
+                          <li key={user.id} className="flex items-center justify-between py-1">
+                            <span>{user.name}</span>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleRemoveAssignedUser(user.id);
+                              }}
+                              className="text-gray-500 hover:text-red-600 p-1"
+                              title="Remove user"
+                              type="button"
+                            >
+                              <X size={16} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
 
-              <select
-                multiple
-                className="w-full border px-3 py-2 rounded"
-                value={formData.assignedTo}
-                onChange={(e) =>
-                  setFormData(prev => ({
-                    ...prev,
-                    assignedTo: [
-                      ...prev.assignedTo,
-                      ...Array.from(e.target.selectedOptions)
-                        .map(o => o.value)
-                        .filter((v): v is string => v !== undefined)
-                        .filter(v => !prev.assignedTo.includes(v)),
-                    ],
-                  }))
-                }
-              >
-                {users.map(user => (
-                  <option
-                    key={user.id}
-                    value={user.id.toString()}
-                    className={formData.assignedTo.includes(user.id.toString()) ? "bg-blue-200 font-semibold" : ""}
-                  >
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+                {formData.assignedTo.length === 0 && (
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    No users assigned. Select users from the list below.
+                  </div>
+                )}
+
+                <select
+                  multiple
+                  className="w-full border px-3 py-2 rounded h-32"
+                  value={formData.assignedTo}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      assignedTo: selected,
+                    }));
+                    console.log('Selected from dropdown:', selected);
+                  }}
+                >
+                  {users.map(user => (
+                    <option
+                      key={user.id}
+                      value={String(user.id)}
+                      className={formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
+                    >
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple users</p>
+              </div>
             </div>
 
-            {/* Buttons */}
-<div className="flex justify-between mt-6 flex-wrap gap-2">
-  {/* Mark Completed Button - Left Side */}
-  {!formData.title.includes("(Event Completed)") && (
-  <button
-  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-  onClick={async () => {
-    if (formData.title.includes("(Event Completed)")) {
-      toast("Event already marked as completed");
-      return;
-    }
+            <div className="flex justify-between mt-6 flex-wrap gap-2">
+              {!formData.title.includes("(Event Completed)") && (
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                  onClick={async () => {
+                    const toastId = toast.loading("Marking as completed...");
+                    try {
+                      const res = await fetch(`/api/events/${event.id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "markCompleted" }),
+                      });
 
-    const toastId = toast.loading("Marking as completed...");
-    try {
-      const res = await fetch(`/api/events/${event.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "markCompleted" }),
-      });
+                      if (!res.ok) throw new Error("Failed to mark event as completed");
 
-      if (!res.ok) throw new Error("Failed to mark event as completed");
+                      setShowEditModal(false);
+                      toast.success("Event marked as completed!", { id: toastId });
+                      if (onEventChanged) onEventChanged();
+                    } catch (err) {
+                      console.error(err);
+                      toast.error(
+                        err instanceof Error ? err.message : "Failed to mark completed",
+                        { id: toastId }
+                      );
+                    }
+                  }}
+                  type="button"
+                >
+                  Mark Completed
+                </button>
+              )}
 
-      const data = await res.json();
+              <div className="flex gap-2">
+                <button
+                  className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
+                  onClick={() => {
+                    resetForm();
+                    setShowEditModal(false);
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </button>
 
-      // Optimistically update the title in the modal
-      setFormData(prev => ({
-        ...prev,
-        title: `${prev.title.trim()} (Event Completed)`,
-      }));
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                  onClick={() => setShowSaveConfirmModal(true)}
+                  type="button"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
 
-      toast.success("Event marked as completed!", { id: toastId });
-
-      // Update parent to refresh calendar
-      if (onEventChanged) onEventChanged();
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to mark completed",
-        { id: toastId }
-      );
-    }
-  }}
->
-  Mark Completed
-</button>
-
-  )}
-
-  {/* Right Side Buttons */}
-  <div className="flex gap-2">
-    <button
-      className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
-      onClick={() => setShowEditModal(false)}
-    >
-      Cancel
-    </button>
-
-    <button
-      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-      onClick={() => setShowSaveConfirmModal(true)}
-    >
-      Save
-    </button>
-  </div>
-</div>
-
-
-
-            {/* Save Confirmation Dialog */}
             {showSaveConfirmModal && (
               <Dialog
                 open={showSaveConfirmModal}
@@ -453,6 +448,15 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                 <Dialog.Panel className="bg-white rounded-lg p-6 w-full sm:w-96">
                   <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
                   <p className="mt-2">Are you sure you want to save changes to this event?</p>
+                  
+                  {/* Show what will be saved */}
+                  <div className="mt-3 p-2 bg-gray-50 rounded text-sm">
+                    <p className="font-medium">Assigned Users: {formData.assignedTo.length}</p>
+                    {formData.assignedTo.length === 0 && (
+                      <p className="text-yellow-600 text-xs mt-1">⚠️ This will remove all user assignments</p>
+                    )}
+                  </div>
+
                   <div className="flex justify-end mt-4 gap-2">
                     <button
                       className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
@@ -476,8 +480,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           </Dialog.Panel>
         </Dialog>
       )}
-
-
     </div>
   );
 };

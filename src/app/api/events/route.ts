@@ -149,3 +149,172 @@ export async function DELETE(req: Request) {
     );
   }
 }
+
+// Update an event
+// Update an event safely
+// Update an event - Fixed version
+export async function PUT(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const eventId = parseInt(url.pathname.split("/").pop() || "", 10);
+
+    if (isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { title, description, start, end, assignedTo, action, eventType } = body;
+
+    console.log("PUT request received:", { eventId, body }); // Debug log
+
+    // Check if event exists first
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        assignments: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Handle "markCompleted" action
+    if (action === "markCompleted") {
+      const updatedEvent = await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          title: existingEvent.title.includes("(Event Completed)")
+            ? existingEvent.title
+            : `${existingEvent.title} (Event Completed)`,
+        },
+        include: {
+          assignments: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({
+        id: updatedEvent.id,
+        title: updatedEvent.title,
+        description: updatedEvent.description ?? "",
+        eventType: updatedEvent.eventType,
+        start: updatedEvent.start.toISOString(),
+        end: updatedEvent.end.toISOString(),
+        assignedTo: updatedEvent.assignments.map((a) => ({
+          userId: a.userId,
+          user: {
+            name: a.user.name,
+            email: a.user.email,
+            designation: a.user.designation,
+          },
+        })),
+      });
+    }
+
+    // Update event details
+    const updatedEvent = await prisma.event.update({
+      where: { id: eventId },
+      data: {
+        title,
+        description: description || null,
+        eventType: eventType || existingEvent.eventType,
+        start: new Date(start),
+        end: new Date(end),
+      },
+    });
+
+    // Always update assignments (even if empty array to remove all users)
+    if (assignedTo !== undefined && Array.isArray(assignedTo)) {
+      console.log("Updating assignments:", assignedTo); // Debug log
+      
+      // Remove all current assignments
+      await prisma.eventAssignment.deleteMany({ 
+        where: { eventId } 
+      });
+
+      // Only add new assignments if there are users to assign
+      if (assignedTo.length > 0) {
+        // Filter out any null/undefined values and convert to numbers
+        const userIds = assignedTo
+          .filter(id => id !== null && id !== undefined)
+          .map(id => Number(id));
+
+        console.log("User IDs to assign:", userIds); // Debug log
+
+        if (userIds.length > 0) {
+          // Verify users exist
+          const validUsers = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true },
+          });
+
+          console.log("Valid users found:", validUsers); // Debug log
+
+          if (validUsers.length > 0) {
+            await prisma.eventAssignment.createMany({
+              data: validUsers.map(u => ({ eventId, userId: u.id })),
+            });
+          }
+        }
+      }
+    }
+
+    // Fetch the updated event with all related data
+    const finalEvent = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        assignments: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!finalEvent) {
+      return NextResponse.json({ error: "Event not found after update" }, { status: 404 });
+    }
+
+    // Format response
+    const formattedEvent = {
+      id: finalEvent.id,
+      title: finalEvent.title,
+      description: finalEvent.description ?? "",
+      eventType: finalEvent.eventType,
+      start: finalEvent.start.toISOString(),
+      end: finalEvent.end.toISOString(),
+      assignedTo: finalEvent.assignments.map((a) => ({
+        userId: a.userId,
+        user: {
+          name: a.user.name,
+          email: a.user.email,
+          designation: a.user.designation,
+        },
+      })),
+    };
+
+    console.log("Returning formatted event:", formattedEvent); // Debug log
+
+    return NextResponse.json(formattedEvent);
+  } catch (err: any) {
+    console.error("Failed to update event:", err);
+    return NextResponse.json(
+      {
+        error: "Failed to update event",
+        details: err?.message || "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+
+// End of src/app/api/events/route.ts
