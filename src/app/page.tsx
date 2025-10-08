@@ -15,6 +15,16 @@ import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Tippy from '@tippyjs/react';
+function getEventStatus(start: string | Date, end: string | Date) {
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (now < startDate) return "Upcoming";
+  if (now >= startDate && now <= endDate) return "Ongoing";
+  return "Completed"; // fallback if event already ended
+}
+
 const localizer = momentLocalizer(moment);
 interface UserAvailability {
   id: number;
@@ -272,31 +282,29 @@ export default function App() {
     });
   };
 
-const handleMarkCompleted = async (eventId: number) => {
-  try {
-    const res = await fetch(`/api/events/${eventId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "markCompleted" }),
-    });
+  const handleMarkCompleted = async (eventId: number) => {
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markCompleted" }),
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      alert(`Failed to update event status: ${errorData.error || "Unknown error"}`);
-      return;
+      const data = await res.json();
+      if (res.ok) {
+        // ✅ instantly update local state
+        setSelectedEvent((prev) =>
+          prev ? { ...prev, status: "completed" } : prev
+        );
+        toast.success("Event marked as completed!");
+      } else {
+        toast.error(data.error || "Failed to update event");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
     }
-
-    const data = await res.json();
-    alert("✅ Event marked as completed!");
-    await refetchEvents();
-    setSelectedEvent(null);
-  } catch (error) {
-    alert("Something went wrong while marking event completed.");
-  }
-};
-
-
-
+  };
 
   return (
     <div
@@ -506,35 +514,35 @@ const handleMarkCompleted = async (eventId: number) => {
 
             ),
 
-event: ({ event }) => {
-  const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
-  const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
+            event: ({ event }) => {
+              const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
+              const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
 
-  return (
-    <Tippy
-      content={
-        <div className="p-2 text-sm">
-          <p className="font-semibold mb-1">{event.title}</p>
-          {event.assignedTo && event.assignedTo.length > 0 && (
-            <p className="text-xs">
-              <strong>Assigned to:</strong>{' '}
-              {event.assignedTo.map(u => u.user?.name).join(', ')}
-            </p>
-          )}
-        </div>
-      }
-      theme="light-border"
-      placement="top"
-    >
-      <div
-        className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
-        style={{ backgroundColor }}
-      >
-        {truncatedTitle} {event.isCompleted && <span className="text-green-200">(Event Completed)</span>}
-      </div>
-    </Tippy>
-  );
-},
+              return (
+                <Tippy
+                  content={
+                    <div className="p-2 text-sm">
+                      <p className="font-semibold mb-1">{event.title}</p>
+                      {event.assignedTo && event.assignedTo.length > 0 && (
+                        <p className="text-xs">
+                          <strong>Assigned to:</strong>{' '}
+                          {event.assignedTo.map(u => u.user?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  }
+                  theme="light-border"
+                  placement="top"
+                >
+                  <div
+                    className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
+                    style={{ backgroundColor }}
+                  >
+                    {truncatedTitle} {event.isCompleted && <span className="text-green-200">(Event Completed)</span>}
+                  </div>
+                </Tippy>
+              );
+            },
             dateCellWrapper: (props) => (
               <div
                 {...props}
@@ -707,60 +715,71 @@ event: ({ event }) => {
         </div>
       )}
 
-
-
       {/* Event Details Modal */}
-{/* Event Details Modal */}
-{selectedEvent && (
-  <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-    <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
-      <h2 className="text-lg font-semibold mb-4">Event Details</h2>
+      {selectedEvent && (
+        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+            <h2 className="text-lg font-semibold mb-4">Event Details</h2>
 
-      <p>
-        <strong>Type:</strong>{" "}
-        {selectedEvent.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular Event"}
-      </p>
+            {/* ✅ Dynamic Status Display */}
+            <p>
+              <strong>Status:</strong>{" "}
+              <span
+                className={
+                  selectedEvent.status === "completed"
+                    ? "text-green-600"
+                    : getEventStatus(selectedEvent.start, selectedEvent.end) === "Ongoing"
+                      ? "text-blue-600"
+                      : "text-gray-600"
+                }
+              >
+                {selectedEvent.status === "completed"
+                  ? "Completed"
+                  : getEventStatus(selectedEvent.start, selectedEvent.end)}
+              </span>
+            </p>
 
-      {/* Title with "Event Completed" if marked */}
-{/* Title with "Event Completed" if marked */}
-<p>
-  <strong>Title:</strong>{" "}
-  {selectedEvent.title}{" "}
-  {selectedEvent.isCompleted && <span className="text-green-600">(Event Completed)</span>}
-</p>
+            <p>
+              <strong>Type:</strong>{" "}
+              {selectedEvent.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular Event"}
+            </p>
 
+            <p>
+              <strong>Title:</strong> {selectedEvent.title}
+            </p>
 
-      <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
-      <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
-      <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+            <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
+            <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+            <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
 
-      <p>
-        <strong>Assigned to:</strong>{" "}
-        {selectedEvent.assignedTo?.map(u => u.user?.name).join(", ") || "—"}
-      </p>
+            <p>
+              <strong>Assigned to:</strong>{" "}
+              {selectedEvent.assignedTo?.map((u) => u.user?.name).join(", ") || "—"}
+            </p>
 
-      <div className="flex justify-end gap-3 mt-6">
-        {/* Mark Completed Button */}
-        {!selectedEvent.isCompleted && (
-          <button
-            onClick={() => handleMarkCompleted(selectedEvent.id)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Mark Completed
-          </button>
-        )}
+            <div className="flex justify-end gap-3 mt-6">
+              {/* ✅ Mark Completed Button (hidden if already completed) */}
+              {selectedEvent.status !== "completed" && (
+                <button
+                  onClick={() => handleMarkCompleted(selectedEvent.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                >
+                  Mark Completed
+                </button>
+              )}
 
-        {/* Close Button */}
-        <button
-          onClick={() => setSelectedEvent(null)}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
 
 

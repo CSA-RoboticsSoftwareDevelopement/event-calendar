@@ -9,6 +9,7 @@ export interface User {
 }
 
 export interface CalendarEvent {
+  status: string;
   isCompleted: any;
   assignments: string ;
   id: number;
