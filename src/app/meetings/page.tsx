@@ -53,11 +53,11 @@ export default function EventsPage() {
     assignedTo: [] as string[],
   });
   const [users, setUsers] = useState<User[]>([]);
-  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
+  
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
     const date =
@@ -75,6 +75,7 @@ export default function EventsPage() {
       date.getDate()
     )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
+  
   // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
     const fetchUsers = async () => {
@@ -189,57 +190,53 @@ export default function EventsPage() {
     }
   };
 
-  // Prepares the edit modal with the selected event's data
-  const handleEditClick = (event: Event) => {
-    setCurrentEvent(event);
-    setFormData({
-      title: event.title,
-      start: toLocalDateTimeString(event.start),
-      end: toLocalDateTimeString(event.end),
-      description: event.description, // Set the description in the form data
-      assignedTo: event.assignedTo?.map((a) => String(a.user.id)) || [],
-    });
-    setPendingRemovals([]);
-    setShowEditModal(true);
-  };
-
-  // Handles marking a user for removal, which is finalized on save
-  const handleRemoveAssignedUser = (userId: number) => {
-    const userIdStr = String(userId);
-    setPendingRemovals((prev) => [...prev, userIdStr]);
-    setFormData((prev) => ({
-      ...prev,
-      assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
-    }));
-  };
-
-  // Handles saving the updated event daa
+  // Update handleEditClick
+ const handleEditClick = (event: Event) => {
+  setCurrentEvent(event);
+  setFormData({
+    title: event.title,
+    start: toLocalDateTimeString(event.start),
+    end: toLocalDateTimeString(event.end),
+    description: event.description,
+    assignedTo: event.assignedTo?.map((a) => String(a.userId)) || [], // Use userId instead of user.id
+  });
+  setShowEditModal(true);
+};
+  // Simplify handleRemoveAssignedUser
+const handleRemoveAssignedUser = (userId: number) => {
+  const userIdStr = String(userId);
+  setFormData((prev) => ({
+    ...prev,
+    assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
+  }));
+};
+// Add this inside the Edit Modal section to debug
+useEffect(() => {
+  if (showEditModal) {
+    console.log('FormData assignedTo:', formData.assignedTo);
+    console.log('Available users:', users);
+    console.log('Current event assigned users:', currentEvent?.assignedTo);
+  }
+}, [showEditModal, formData.assignedTo, users, currentEvent]);
+  // Handles saving the updated event data
   const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
     const toastId = toast.loading("Saving changes...");
 
     try {
-      // Rest of your existing code remains the same...
-      // First, process pending removals
-      if (pendingRemovals.length > 0) {
-        await Promise.all(
-          pendingRemovals.map((userId) =>
-            fetch(`/api/events/${currentEvent.id}/assignments`, {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ userId: Number(userId) }),
-            })
-          )
-        );
-      }
+      // Convert assignedTo strings to numbers
+      const finalAssignedTo = formData.assignedTo
+        .map(id => Number(id))
+        .filter(id => !isNaN(id));
 
-      // Then, update the event with UTC times and the new description
+      console.log('Saving with assignedTo:', finalAssignedTo);
+
       const payload = {
         title: formData.title,
         description: formData.description,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
-        assignedTo: formData.assignedTo.map((id) => Number(id)),
+        assignedTo: finalAssignedTo,
       };
 
       const res = await fetch(`/api/events/${currentEvent.id}`, {
@@ -249,7 +246,6 @@ export default function EventsPage() {
       });
 
       if (res.ok) {
-        setPendingRemovals([]);
         setShowEditModal(false);
         toast.success("Event updated successfully!", { id: toastId });
         fetchEvents();
@@ -260,18 +256,18 @@ export default function EventsPage() {
     } catch (err) {
       console.error("Update error:", err);
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "Error saving changes. Please try again.",
+        err instanceof Error ? err.message : "Error saving changes.",
         { id: toastId }
       );
     }
   };
+
   useEffect(() => {
     if (eventsContainerRef.current) {
       eventsContainerRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [currentPage]);
+  
   return (
     <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
       <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
@@ -521,7 +517,7 @@ export default function EventsPage() {
 
       </div>
 
-      {/* Edit Modal (Copied from agendaview.tsx) */}
+      {/* Edit Modal */}
       {showEditModal && currentEvent && (
         <Dialog
           open={showEditModal}
@@ -532,12 +528,6 @@ export default function EventsPage() {
             <Dialog.Title className="text-lg font-semibold text-center sm:text-left">
               Edit Event
             </Dialog.Title>
-
-            {pendingRemovals.length > 0 && (
-              <div className="mt-3 p-2 bg-yellow-100 text-yellow-800 rounded text-sm">
-                You have {pendingRemovals.length} pending user removal(s) that will be saved when you click Save.
-              </div>
-            )}
 
             <div className="mt-4 space-y-4">
               {/* Title */}
@@ -612,73 +602,69 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              {/* Assigned Users */}
+              {/* Assigned Users - Fixed Section */}
               <div>
                 <label className="block mb-1 font-medium">Assign to</label>
 
-                {currentEvent.assignedTo?.length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-40 overflow-y-auto border border-gray-200">
-                    <p className="text-sm font-semibold mb-2">
-                      Currently Assigned:
-                    </p>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      {currentEvent.assignedTo
-                        .filter(
-                          (assignment) =>
-                            !pendingRemovals.includes(String(assignment.userId))
-                        )
-                        .map((assignment) => (
-                          <li
-                            key={assignment.userId}
-                            className="flex items-center justify-between"
-                          >
-                            <span>{assignment.user?.name || "Unknown"}</span>
+                {formData.assignedTo.length > 0 && (
+                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
+                    <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
+                    <ul className="list-none text-sm space-y-1">
+                      {formData.assignedTo.map((userId) => {
+                        const user = users.find(u => String(u.id) === userId);
+                        if (!user) return null;
+                        return (
+                          <li key={user.id} className="flex items-center justify-between py-1">
+                            <span>{user.name}</span>
                             <button
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                handleRemoveAssignedUser(assignment.userId);
+                                handleRemoveAssignedUser(user.id);
                               }}
-                              className="text-gray-500 hover:text-red-600 transition"
+                              className="text-gray-500 hover:text-red-600 p-1"
                               title="Remove user"
+                              type="button"
                             >
-                              <X size={14} />
+                              <X size={16} />
                             </button>
                           </li>
-                        ))}
+                        );
+                      })}
                     </ul>
+                  </div>
+                )}
+
+                {formData.assignedTo.length === 0 && (
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    No users assigned. Select users from the list below.
                   </div>
                 )}
 
                 <select
                   multiple
-                  className="w-full border px-3 py-2 rounded mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border px-3 py-2 rounded h-32"
                   value={formData.assignedTo}
                   onChange={(e) => {
-                    const newSelected = Array.from(e.target.selectedOptions).map(
-                      (o) => o.value
-                    );
-                    setFormData({
-                      ...formData,
-                      assignedTo: Array.from(
-                        new Set([...formData.assignedTo, ...newSelected])
-                      ),
-                    });
+                    const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      assignedTo: selected,
+                    }));
+                    console.log('Selected from dropdown:', selected);
                   }}
                 >
-                  {users.map((user) => (
+                  {users.map(user => (
                     <option
                       key={user.id}
-                      value={user.id}
-                      className={
-                        formData.assignedTo.includes(user.id.toString())
-                          ? "bg-blue-200 font-semibold"
-                          : ""
-                      }
+                      value={String(user.id)}
+                      className={formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
                     >
                       {user.name}
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple users</p>
               </div>
             </div>
 
