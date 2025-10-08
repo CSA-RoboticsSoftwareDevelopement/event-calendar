@@ -1,7 +1,5 @@
 import type { NextRequest } from "next/server";
-import { prisma } from "../../../../lib/prisma"; // Ensure prisma client is imported
-
-
+import { prisma } from "../../../../lib/prisma";
 
 export async function DELETE(
   req: NextRequest,
@@ -15,12 +13,10 @@ export async function DELETE(
   }
 
   try {
-    // First delete assignments (if you have FK constraints)
     await prisma.eventAssignment.deleteMany({
       where: { eventId },
     });
 
-    // Then delete the event itself
     await prisma.event.delete({
       where: { id: eventId },
     });
@@ -54,8 +50,7 @@ export async function PUT(
 
     console.log("=== PUT [id] route ===");
     console.log("Event ID:", eventId);
-    console.log("Body received:", body);
-    console.log("assignedTo:", assignedTo);
+    console.log("Action:", action);
 
     // Check if event exists
     const existingEvent = await prisma.event.findUnique({
@@ -75,12 +70,12 @@ export async function PUT(
 
     // Handle "markCompleted" action
     if (action === "markCompleted") {
+      console.log("Marking event as completed");
+      
       const updatedEvent = await prisma.event.update({
         where: { id: eventId },
         data: {
-          title: existingEvent.title.includes("(Event Completed)")
-            ? existingEvent.title
-            : `${existingEvent.title} (Event Completed)`,
+          status: "completed",
         },
         include: {
           assignments: {
@@ -96,6 +91,7 @@ export async function PUT(
         title: updatedEvent.title,
         description: updatedEvent.description ?? "",
         eventType: updatedEvent.eventType,
+        status: updatedEvent.status,
         start: updatedEvent.start.toISOString(),
         end: updatedEvent.end.toISOString(),
         assignedTo: updatedEvent.assignments.map((a) => ({
@@ -108,34 +104,57 @@ export async function PUT(
         })),
       };
 
+      console.log("Event marked as completed:", formattedEvent);
       return Response.json(formattedEvent);
     }
 
-    // Update the event with eventType
+    // Regular update (edit form)
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const now = new Date();
+
+    // Determine status based on time
+    let status = existingEvent.status; // Keep existing status by default
+    
+    // Only auto-update status if it's not already completed
+    if (existingEvent.status !== "completed") {
+      if (now < startDate) {
+        status = "upcoming";
+      } else if (now >= startDate && now <= endDate) {
+        status = "ongoing";
+      }
+      // Note: We don't automatically set to "completed" when time passes
+      // User must manually mark it as completed
+    }
+
+    console.log("Updating event with status:", status);
+
+    // Update the event
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },
       data: {
         title,
         description: description || null,
         eventType: eventType || existingEvent.eventType,
-        start: new Date(start),
-        end: new Date(end),
+        start: startDate,
+        end: endDate,
+        status: status,
       },
     });
 
-    // CRITICAL: Always handle assignments when assignedTo is provided (even if empty array)
+    // Handle assignments if provided
     if (assignedTo !== undefined && Array.isArray(assignedTo)) {
       console.log("Processing assignments update...");
       console.log("assignedTo array:", assignedTo);
       
-      // STEP 1: Delete ALL existing assignments first
+      // Delete ALL existing assignments first
       const deletedCount = await prisma.eventAssignment.deleteMany({
         where: { eventId },
       });
       
       console.log(`Deleted ${deletedCount.count} existing assignments`);
 
-      // STEP 2: Only create new assignments if array is not empty
+      // Only create new assignments if array is not empty
       if (assignedTo.length > 0) {
         const validIds = assignedTo
           .map((id) => parseInt(String(id), 10))
@@ -180,12 +199,13 @@ export async function PUT(
       return Response.json({ error: "Event not found after update" }, { status: 404 });
     }
 
-    // Format response to match frontend expectations
+    // Format response
     const formattedEvent = {
       id: finalEvent.id,
       title: finalEvent.title,
       description: finalEvent.description ?? "",
       eventType: finalEvent.eventType,
+      status: finalEvent.status,
       start: finalEvent.start.toISOString(),
       end: finalEvent.end.toISOString(),
       assignedTo: finalEvent.assignments.map((a) => ({
@@ -199,7 +219,7 @@ export async function PUT(
     };
 
     console.log("Final formatted event:", formattedEvent);
-    console.log("Number of assignments:", formattedEvent.assignedTo.length);
+    console.log("Event status:", formattedEvent.status);
 
     return Response.json(formattedEvent);
   } catch (err: unknown) {

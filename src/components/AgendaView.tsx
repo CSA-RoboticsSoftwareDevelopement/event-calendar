@@ -14,6 +14,7 @@ interface CalendarEvent {
   description?: string;
   start: string | Date;
   end: string | Date;
+  status?: string;
   assignedTo?: { user?: User; userId?: string | number }[];
 }
 
@@ -42,6 +43,11 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     end: event.end,
     assignedTo: [] as string[],
   });
+const colors = {
+  upcoming: 'bg-blue-100 text-blue-800',
+  ongoing: 'bg-yellow-100 text-yellow-800',
+  completed: 'bg-green-100 text-green-800'
+};
 
   // Initialize form data when event changes
   useEffect(() => {
@@ -119,15 +125,39 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     ));
   };
 
+  const handleMarkCompleted = async () => {
+    setShowCompleteConfirmModal(false);
+    const toastId = toast.loading("Marking event as completed...");
+
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markCompleted" }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to mark event as completed");
+      }
+
+      toast.success("Event marked as completed!", { id: toastId });
+      
+      if (onEventChanged) {
+        onEventChanged();
+      }
+    } catch (err) {
+      console.error("Mark completed error:", err);
+      toast.error(err instanceof Error ? err.message : "Error marking event as completed", { id: toastId });
+    }
+  };
+
   const handleRemoveAssignedUser = (userId?: string | number) => {
     if (!userId) return;
     const userIdStr = String(userId);
     
     setFormData(prev => {
       const newAssignedTo = prev.assignedTo.filter(id => id !== userIdStr);
-      console.log('Removing user:', userIdStr);
-      console.log('Previous assignedTo:', prev.assignedTo);
-      console.log('New assignedTo:', newAssignedTo);
       return {
         ...prev,
         assignedTo: newAssignedTo,
@@ -138,24 +168,17 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const handleSave = async () => {
     const toastId = toast.loading("Saving changes...");
     try {
-      // Convert to numbers and filter out invalid ones
       const finalAssignedTo = formData.assignedTo
         .map(id => Number(id))
         .filter(id => !isNaN(id));
-
-      console.log('=== SAVE DEBUG ===');
-      console.log('formData.assignedTo (strings):', formData.assignedTo);
-      console.log('finalAssignedTo (numbers):', finalAssignedTo);
 
       const payload = {
         title: formData.title,
         description: formData.description || null,
         start: toUTCISOString(formData.start),
         end: toUTCISOString(formData.end),
-        assignedTo: finalAssignedTo, // This will be [] if all users removed
+        assignedTo: finalAssignedTo,
       };
-
-      console.log('Payload being sent:', JSON.stringify(payload, null, 2));
 
       const res = await fetch(`/api/events/${event.id}`, {
         method: "PUT",
@@ -165,17 +188,12 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Server response:', errorText);
         throw new Error(errorText || "Failed to update event");
       }
-
-      const responseData = await res.json();
-      console.log('Success response:', responseData);
 
       setShowEditModal(false);
       toast.success("Event updated successfully!", { id: toastId });
       
-      // Refresh the calendar
       if (onEventChanged) {
         onEventChanged();
       }
@@ -200,10 +218,29 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     });
   };
 
+  // Get status badge
+  const getStatusBadge = () => {
+    const status = event.status || 'upcoming';
+    const colors = {
+      upcoming: 'bg-blue-100 text-blue-800',
+      ongoing: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-green-100 text-green-800'
+    };
+    
+    return (
+      <span className={`text-xs px-2 py-1 rounded-full ${colors[status as keyof typeof colors] || colors.upcoming}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
       <div className="flex-1 min-w-0">
-        <strong className="block truncate">{event.title}</strong>
+        <div className="flex items-center gap-2">
+          <strong className="block truncate">{event.title}</strong>
+          {getStatusBadge()}
+        </div>
         {event.description && (
           <p className="text-sm text-gray-700 mt-1 truncate">
             {event.description}
@@ -216,15 +253,15 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       </div>
 
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-      <div className="flex-shrink-0 flex items-center gap-2 mt-2 md:mt-0 md:ml-4">
-          {/* Mark Completed Icon */}
-          {!formData.title.includes("(Event Completed)") && (
+        <div className="flex-shrink-0 flex items-center gap-2 mt-2 md:mt-0 md:ml-4">
+          {/* Mark Completed Icon - Only show if status is not completed */}
+          {event.status !== 'completed' && (
             <span
               title="Mark Completed"
               className="w-5 h-5 cursor-pointer"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent opening event details modal
-                setShowCompleteConfirmModal(true); // Show modal
+                e.stopPropagation();
+                setShowCompleteConfirmModal(true);
               }}
             >
               <svg
@@ -250,18 +287,48 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             />
           </span>
 
-        <span title="Delete">
-          <Trash2
-            className="w-4 h-4 text-red-600 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteConfirmation();
-            }}
-          />
-        </span>
+          {/* Delete Icon */}
+          <span title="Delete">
+            <Trash2
+              className="w-4 h-4 text-red-600 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteConfirmation();
+              }}
+            />
+          </span>
         </div>
       </div>
 
+      {/* Mark Completed Confirmation Modal */}
+      {showCompleteConfirmModal && (
+        <Dialog
+          open={showCompleteConfirmModal}
+          onClose={() => setShowCompleteConfirmModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
+          <Dialog.Panel className="bg-white rounded-lg p-6 w-96">
+            <Dialog.Title className="text-lg font-semibold">Mark as Completed</Dialog.Title>
+            <p className="mt-2">Are you sure you want to mark this event as completed?</p>
+            <div className="flex justify-end mt-4 gap-2">
+              <button
+                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                onClick={() => setShowCompleteConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleMarkCompleted}
+              >
+                Mark Completed
+              </button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
+      {/* Delete Modal */}
       {showDeleteModal && (
         <Dialog
           open={showDeleteModal}
@@ -289,6 +356,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         </Dialog>
       )}
 
+      {/* Edit Modal */}
       {showEditModal && (
         <Dialog
           open={showEditModal}
@@ -393,7 +461,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                       ...prev,
                       assignedTo: selected,
                     }));
-                    console.log('Selected from dropdown:', selected);
                   }}
                 >
                   {users.map(user => (
@@ -411,8 +478,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
             </div>
 
             <div className="flex justify-between mt-6 flex-wrap gap-2">
-           
-
               <div className="flex gap-2">
                 <button
                   className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
@@ -435,6 +500,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
               </div>
             </div>
 
+            {/* Save Confirmation Modal */}
             {showSaveConfirmModal && (
               <Dialog
                 open={showSaveConfirmModal}
@@ -445,7 +511,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
                   <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
                   <p className="mt-2">Are you sure you want to save changes to this event?</p>
                   
-                  {/* Show what will be saved */}
                   <div className="mt-3 p-2 bg-gray-50 rounded text-sm">
                     <p className="font-medium">Assigned Users: {formData.assignedTo.length}</p>
                     {formData.assignedTo.length === 0 && (
