@@ -129,8 +129,8 @@ export async function PUT(
 
     console.log("Updating event with status:", status);
 
-    // Update the event
-    const updatedEvent = await prisma.event.update({
+    // Update the event - removed unused variable assignment
+    await prisma.event.update({
       where: { id: eventId },
       data: {
         title,

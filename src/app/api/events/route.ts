@@ -1,4 +1,3 @@
-// app/api/events/route.ts
 import { prisma } from "@/src/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -17,24 +16,23 @@ export async function GET() {
     });
 
     // Format the events data for the frontend
-const formattedEvents = events.map((event) => ({
-  id: event.id,
-  title: event.title,
-  description: event.description ?? "",
-  eventType: (event as unknown as { eventType: string }).eventType || "regular",
-  start: event.start.toISOString(),
-  end: event.end.toISOString(),
-  status: (event as any).status || "upcoming", // ✅ Include status here
-  assignedTo: event.assignments.map((a) => ({
-    userId: a.userId,
-    user: {
-      name: a.user.name,
-      email: a.user.email,
-      designation: a.user.designation,
-    },
-  })),
-}));
-
+    const formattedEvents = events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      description: event.description ?? "",
+      eventType: (event as { eventType?: string }).eventType || "regular",
+      start: event.start.toISOString(),
+      end: event.end.toISOString(),
+      status: event.status || "upcoming", // ✅ Include status here
+      assignedTo: event.assignments.map((a) => ({
+        userId: a.userId,
+        user: {
+          name: a.user.name,
+          email: a.user.email,
+          designation: a.user.designation,
+        },
+      })),
+    }));
 
     // Return the formatted events as a JSON response
     return NextResponse.json(formattedEvents);
@@ -122,7 +120,6 @@ export async function POST(req: Request) {
   }
 }
 
-
 // API to handle DELETE requests for an event
 export async function DELETE(req: Request) {
   try {
@@ -157,8 +154,6 @@ export async function DELETE(req: Request) {
 }
 
 // Update an event
-// Update an event safely
-// Update an event - Fixed version
 export async function PUT(req: Request) {
   try {
     const url = new URL(req.url);
@@ -178,21 +173,29 @@ export async function PUT(req: Request) {
 
     // Handle "Mark Completed"
     if (action === "markCompleted") {
-      const updatedEvent = await prisma.event.update({
+      await prisma.event.update({
         where: { id: eventId },
         data: { status: "completed" },
+      });
+
+      const finalEvent = await prisma.event.findUnique({
+        where: { id: eventId },
         include: { assignments: { include: { user: true } } },
       });
 
+      if (!finalEvent) {
+        return NextResponse.json({ error: "Event not found after update" }, { status: 404 });
+      }
+
       const formattedCompleted = {
-        id: updatedEvent.id,
-        title: updatedEvent.title,
-        description: updatedEvent.description ?? "",
-        eventType: updatedEvent.eventType,
-        status: updatedEvent.status,
-        start: updatedEvent.start.toISOString(),
-        end: updatedEvent.end.toISOString(),
-        assignedTo: updatedEvent.assignments.map((a) => ({
+        id: finalEvent.id,
+        title: finalEvent.title,
+        description: finalEvent.description ?? "",
+        eventType: finalEvent.eventType,
+        status: finalEvent.status,
+        start: finalEvent.start.toISOString(),
+        end: finalEvent.end.toISOString(),
+        assignedTo: finalEvent.assignments.map((a) => ({
           userId: a.userId,
           user: {
             name: a.user.name,
@@ -218,7 +221,7 @@ export async function PUT(req: Request) {
       else if (now > endDate) status = "upcoming"; // keep "upcoming" if finished but not marked
     }
 
-    const updatedEvent = await prisma.event.update({
+    await prisma.event.update({
       where: { id: eventId },
       data: {
         title,
@@ -230,7 +233,7 @@ export async function PUT(req: Request) {
       },
     });
 
-    // --- Update assignments (no changes to your logic here) ---
+    // Update assignments
     if (assignedTo !== undefined && Array.isArray(assignedTo)) {
       await prisma.eventAssignment.deleteMany({ where: { eventId } });
 
@@ -281,14 +284,14 @@ export async function PUT(req: Request) {
     };
 
     return NextResponse.json(formattedEvent);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Failed to update event:", err);
     return NextResponse.json(
-      { error: "Failed to update event", details: err?.message || "Unknown error" },
+      { 
+        error: "Failed to update event", 
+        details: err instanceof Error ? err.message : "Unknown error" 
+      },
       { status: 500 }
     );
   }
 }
-
-
-// End of src/app/api/events/route.ts

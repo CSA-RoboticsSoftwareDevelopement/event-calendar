@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Tippy from '@tippyjs/react';
+
 const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
   if (manualStatus?.toLowerCase() === "completed") return "Completed";
 
@@ -29,8 +30,8 @@ const getEventStatus = (start: string | Date, end: string | Date, manualStatus?:
   return "Pending";
 };
 
-
 const localizer = momentLocalizer(moment);
+
 interface UserAvailability {
   id: number;
   name: string;
@@ -38,8 +39,8 @@ interface UserAvailability {
   nextAvailable: string;
   availableSlots?: { start: string; end: string }[];
 }
+
 export default function App() {
-  const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserAvailability[]>([]);
@@ -58,32 +59,36 @@ export default function App() {
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 1024); // default width for SSR
   const usersPerPage = windowWidth < 760 ? 9 : windowWidth >= 760 && windowWidth < 1280 ? 15 : 19;
-  console.log(windowWidth)
+  console.log(windowWidth);
+  
   //Authentication  
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [countdown, setCountdown] = useState(5); // 5 seconds
   const [realUname, setRealUname] = useState("");
+  
   //Authentication  
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
     const handleResize = () => {
       window.addEventListener('resize', () => {
-        setWindowWidth(window.innerWidth)
-
-
-      })
-    }
-    handleResize()
+        setWindowWidth(window.innerWidth);
+      });
+    };
+    
+    handleResize();
     const params = new URLSearchParams(window.location.search);
     const uidParam = params.get("uid");
     const unameParam = params.get("uname");
     const roleParam = params.get("role"); // <-- added user_role
+    
     if (uidParam && unameParam && roleParam) {
       // ✅ Save from URL into sessionStorage
       sessionStorage.setItem("uid", uidParam);
       sessionStorage.setItem("uname", unameParam);
       sessionStorage.setItem("role", roleParam); // <-- store role
       console.log("📦 Encoded session stored:", { uidParam, unameParam, roleParam });
+      
       try {
         const decodedUid = atob(uidParam);
         const decodedUname = atob(unameParam);
@@ -97,8 +102,8 @@ export default function App() {
           realUname: realUnameDecoded,
           realRole, // <-- log role
         });
-      } catch (err) {
-        console.error("❌ Failed to decode values", err);
+      } catch {
+        console.error("❌ Failed to decode values");
       }
 
       // Clean URL (remove query params)
@@ -131,8 +136,8 @@ export default function App() {
           const decodedUnameStored = atob(unameStored);
           const [, realUnameDecoded] = decodedUnameStored.split("|");
           setRealUname(realUnameDecoded); // <-- use session value
-        } catch (err) {
-          console.error("❌ Failed to decode uname from sessionStorage", err);
+        } catch {
+          console.error("❌ Failed to decode uname from sessionStorage");
         }
 
         console.log("✅ Using existing sessionStorage values:", {
@@ -143,6 +148,7 @@ export default function App() {
       }
     }
   }, []);
+
   // Refetch events function to refresh the calendar data
   const refetchEvents = () => {
     fetch('/api/events')
@@ -203,7 +209,7 @@ export default function App() {
       } else {
         throw new Error('Failed to create event');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to create event', { id: toastId });
     }
   };
@@ -219,17 +225,6 @@ export default function App() {
     start: new Date(e.start),
     end: new Date(e.end),
   }));
-
-  const getAvailabilityStatus = (userId: number) => {
-    const match = availableUsers.find(u => u.id === userId);
-    if (!match) return null;
-    return match.isBusy
-      ? `Busy - Free at ${new Date(match.nextAvailable).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`
-      : 'Available';
-  };
 
   const handleDeleteEvent = async (eventId: number) => {
     // Show confirmation toast
@@ -261,7 +256,7 @@ export default function App() {
                 } else {
                   throw new Error('Failed to delete event');
                 }
-              } catch (error) {
+              } catch {
                 toast.error('Failed to delete event', { id: deleteToastId });
               }
             }}
@@ -305,8 +300,7 @@ export default function App() {
       } else {
         toast.error(data.error || "Failed to update event");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Something went wrong");
     }
   };
@@ -324,31 +318,13 @@ export default function App() {
       <div className="block lg:flex flex-col sm:flex-row justify-between items-start mt-10 mb-6 gap-4  w-full">
 
         <div className="flex flex-wrap gap-2 sm:w-full  lg:w-[70%] overflow-hidden">
-          {/* <button
-            onClick={() => setSelectedUserId(null)}
-            className={`px-4 py-2 rounded ${selectedUserId === null
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-300 text-black'
-              }`}
-          >
-            All Users (
-            {start && end
-              ? availableUsers.filter(u => !u.isBusy).length
-              : users.length
-            })
-          </button> */}
-          {/* <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 overflow-x-auto max-w-full "> */}
-
-          {/* Left Arrow */}
           {/* User Buttons */}
           <div className="flex gap-2 flex-wrap justify-start">
 
             <button
-              // disabled={currentUserPage === 0}
               onClick={() => setCurrentUserPage(prev => Math.max(0, prev - 1))}
               className={`h-8 w-8 flex justify-center items-center bg-gray-300 rounded disabled:opacity-50 ${currentUserPage === 0 ? 'hidden' : 'block'}`}
             >
-              {/* &lt; */}
               <ChevronLeft />
             </button>
 
@@ -385,7 +361,6 @@ export default function App() {
               })}
 
             <button
-              // disabled={(currentUserPage + 1) * usersPerPage >= users.length}
               onClick={() =>
                 setCurrentUserPage(prev =>
                   (prev + 1) * usersPerPage < users.length ? prev + 1 : prev
@@ -393,12 +368,9 @@ export default function App() {
               }
               className={`h-8 w-8 flex justify-center items-center bg-gray-300 rounded disabled:opacity-50 ${(currentUserPage + 1) * usersPerPage >= users.length ? 'hidden' : 'block'}`}
             >
-              {/* &gt; */}
               <ChevronRight />
             </button>
           </div>
-
-          {/* </div> */}
         </div>
 
         <div className="flex justify-end mr-3 lg:mr-0  space-x-2 mt-7 lg:mt-0">
@@ -721,78 +693,74 @@ export default function App() {
       )}
 
       {/* Event Details Modal */}
-/* Event Details Modal */
-{selectedEvent && (
-  <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-    <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
-      <h2 className="text-lg font-semibold mb-4">Event Details</h2>
+      {selectedEvent && (
+        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+            <h2 className="text-lg font-semibold mb-4">Event Details</h2>
 
-      <p>
-        <strong>Title:</strong> {selectedEvent.title}
-      </p>
+            <p>
+              <strong>Title:</strong> {selectedEvent.title}
+            </p>
 
-      {/* ✅ Only show status for regular events */}
-      {selectedEvent.eventType !== "holiday" && (
-        <p>
-          <strong>Status:</strong>{" "}
-          {(() => {
-            const status = getEventStatus(selectedEvent.start, selectedEvent.end, selectedEvent.status);
-            const colorClass =
-              status === "Completed"
-                ? "bg-green-100 text-green-700"
-                : status === "Ongoing"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : status === "Upcoming"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-700"; // ✅ Pending
+            {/* ✅ Only show status for regular events */}
+            {selectedEvent.eventType !== "holiday" && (
+              <p>
+                <strong>Status:</strong>{" "}
+                {(() => {
+                  const status = getEventStatus(selectedEvent.start, selectedEvent.end, selectedEvent.status);
+                  const colorClass =
+                    status === "Completed"
+                      ? "bg-green-100 text-green-700"
+                      : status === "Ongoing"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : status === "Upcoming"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-700"; // ✅ Pending
 
-            return (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
-                {status}
-              </span>
-            );
-          })()}
-        </p>
+                  return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                      {status}
+                    </span>
+                  );
+                })()}
+              </p>
+            )}
+
+            <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
+            <p>
+              <strong>Type:</strong>{" "}
+              {selectedEvent.eventType === "holiday" ? "Holiday" : "Regular Event"}
+            </p>
+            <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+            <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+
+            <p>
+              <strong>Assigned to:</strong>{" "}
+              {selectedEvent.assignedTo?.map((u) => u.user?.name).join(", ") || "—"}
+            </p>
+
+            <div className="flex justify-end gap-3 mt-6">
+              {/* ✅ Mark Completed Button (only for regular events that are not completed) */}
+              {selectedEvent.eventType !== "holiday" && selectedEvent.status !== "completed" && (
+                <button
+                  onClick={() => handleMarkCompleted(selectedEvent.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                >
+                  Mark Completed
+                </button>
+              )}
+
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
-      <p>
-        <strong>Type:</strong>{" "}
-        {selectedEvent.eventType === "holiday" ? "Holiday" : "Regular Event"}
-      </p>
-      <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
-      <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
-
-      <p>
-        <strong>Assigned to:</strong>{" "}
-        {selectedEvent.assignedTo?.map((u) => u.user?.name).join(", ") || "—"}
-      </p>
-
-      <div className="flex justify-end gap-3 mt-6">
-        {/* ✅ Mark Completed Button (only for regular events that are not completed) */}
-        {selectedEvent.eventType !== "holiday" && selectedEvent.status !== "completed" && (
-          <button
-            onClick={() => handleMarkCompleted(selectedEvent.id)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-          >
-            Mark Completed
-          </button>
-        )}
-
-        {/* Close Button */}
-        <button
-          onClick={() => setSelectedEvent(null)}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
 
       {/* Daily Events Modal */}
       {showDayEventsModal && (
@@ -856,7 +824,7 @@ export default function App() {
               Access Denied
             </h2>
             <p className="text-gray-700">
-              You don’t have permission to access this page. Redirecting…
+              You don&apos;t have permission to access this page. Redirecting…
             </p>
             <p className="mt-3 text-sm text-gray-500">
               You will be redirected in {countdown} second{countdown > 1 ? "s" : ""}.
