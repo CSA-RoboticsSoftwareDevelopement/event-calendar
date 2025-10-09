@@ -27,12 +27,14 @@ type Event = {
   title: string;
   start: string;
   end: string;
-  description: string; // New field for the event description
+  description: string;
+  eventType?: string; // New optional field
   assignedTo: {
     user: User;
     userId: number;
   }[];
 };
+
 
 export default function EventsPage() {
   // Initialize hooks and state variables
@@ -60,20 +62,24 @@ export default function EventsPage() {
   const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false);
   const [eventToComplete, setEventToComplete] = useState<Event | null>(null);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
-  
-  const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
+
+  const getEventStatus = (event: Event) => {
+    // If eventType is holiday, show "Holiday"
+    if (event.eventType?.toLowerCase() === "holiday") return "Holiday";
+
     // If event is manually marked completed, show that
-    if (manualStatus?.toLowerCase() === "completed") return "Completed";
+    if (event.status?.toLowerCase() === "completed") return "Completed";
 
     const now = new Date();
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const startDate = new Date(event.start);
+    const endDate = new Date(event.end);
 
     if (now < startDate) return "Upcoming";
     if (now >= startDate && now <= endDate) return "Ongoing";
-    // ⬇️ If event time is over but not manually completed
-    return "Pending";
+
+    return "Pending"; // Event time over but not completed
   };
+
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -145,7 +151,7 @@ export default function EventsPage() {
 
   // Filters events based on search term and designation filter
   const filteredEvents = events.filter((event) => {
-    const eventStatus = getEventStatus(event.start, event.end, event.status);
+    const eventStatus = getEventStatus(event);
 
     // ⏳ Filter by time / status
     if (eventTimeFilter === "upcoming" && eventStatus !== "Upcoming" && eventStatus !== "Ongoing") {
@@ -433,15 +439,18 @@ export default function EventsPage() {
                       <td className="py-3 px-3 break-words border border-gray-300">{event.description}</td>
                       <td className="py-3 text-center border border-gray-300">
                         {(() => {
-                          const status = getEventStatus(event.start, event.end, event.status);
+                          const status = getEventStatus(event);
                           const colorClass =
-                            status === "Completed"
-                              ? "bg-green-100 text-green-700"
-                              : status === "Ongoing"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : status === "Upcoming"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-gray-100 text-gray-700"; // ✅ Pending (time passed but not completed)
+                            status === "Holiday"
+                              ? "bg-red-100 text-red-700"
+                              : status === "Completed"
+                                ? "bg-green-100 text-green-700"
+                                : status === "Ongoing"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : status === "Upcoming"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-700"; // Pending
+
 
                           return (
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
@@ -590,15 +599,17 @@ export default function EventsPage() {
                     <p>
                       <span className="font-semibold">📊 Status:</span>{" "}
                       {(() => {
-                        const status = getEventStatus(event.start, event.end, event.status);
+                        const status = getEventStatus(event);
                         const colorClass =
-                          status === "Completed"
-                            ? "bg-green-100 text-green-700"
-                            : status === "Ongoing"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : status === "Upcoming"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"; // ✅ Pending (time passed but not completed)
+                          status === "Holiday"
+                            ? "bg-purple-100 text-purple-700"
+                            : status === "Completed"
+                              ? "bg-green-100 text-green-700"
+                              : status === "Ongoing"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : status === "Upcoming"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-gray-100 text-gray-700"; // Pending
 
                         return (
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
