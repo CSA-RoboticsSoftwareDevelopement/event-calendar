@@ -253,7 +253,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
           <strong className="block truncate">{event.title}</strong>
           {/* ✅ Only show status badge for regular events */}
            {event.eventType === "holiday" ? (
-            <span className="text-xs px-2 py-1 rounded-full font-semibold bg-red-600 text-white">
+            <span className="text-xs px-2 py-1 rounded-full font-semibold bg-red-100 text-red-700">
               Holiday
             </span>
           ) : (
