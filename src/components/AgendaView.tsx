@@ -252,7 +252,13 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         <div className="flex items-center gap-2">
           <strong className="block truncate">{event.title}</strong>
           {/* ✅ Only show status badge for regular events */}
-          {event.eventType !== "holiday" && getStatusBadge()}
+           {event.eventType === "holiday" ? (
+            <span className="text-xs px-2 py-1 rounded-full font-semibold bg-red-600 text-white">
+              Holiday
+            </span>
+          ) : (
+            getStatusBadge()
+          )}
         </div>
         {event.description && (
           <p className="text-sm text-gray-700 mt-1 truncate">
