@@ -57,7 +57,10 @@ export default function EventsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false);
+  const [eventToComplete, setEventToComplete] = useState<Event | null>(null);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
+  
   const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
     // If event is manually marked completed, show that
     if (manualStatus?.toLowerCase() === "completed") return "Completed";
@@ -171,7 +174,6 @@ export default function EventsPage() {
     return matchesSearch && matchesFilter;
   });
 
-
   // Pagination logic
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
@@ -226,6 +228,7 @@ export default function EventsPage() {
     });
     setShowEditModal(true);
   };
+
   // Simplify handleRemoveAssignedUser
   const handleRemoveAssignedUser = (userId: number) => {
     const userIdStr = String(userId);
@@ -234,6 +237,7 @@ export default function EventsPage() {
       assignedTo: prev.assignedTo.filter((id) => id !== userIdStr),
     }));
   };
+
   // Add this inside the Edit Modal section to debug
   useEffect(() => {
     if (showEditModal) {
@@ -242,6 +246,7 @@ export default function EventsPage() {
       console.log('Current event assigned users:', currentEvent?.assignedTo);
     }
   }, [showEditModal, formData.assignedTo, users, currentEvent]);
+
   // Handles saving the updated event data
   const handleSave = async (currentEvent: Event) => {
     if (!currentEvent) return;
@@ -284,6 +289,37 @@ export default function EventsPage() {
         { id: toastId }
       );
     }
+  };
+
+  // Handle Mark Completed functionality
+  const handleMarkCompleted = async (event: Event) => {
+    setShowCompleteConfirmModal(false);
+    const toastId = toast.loading("Marking event as completed...");
+
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markCompleted" }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to mark event as completed");
+      }
+
+      toast.success("Event marked as completed!", { id: toastId });
+      fetchEvents(); // Refresh the events list
+    } catch (err) {
+      console.error("Mark completed error:", err);
+      toast.error(err instanceof Error ? err.message : "Error marking event as completed", { id: toastId });
+    }
+  };
+
+  // Handle Mark Completed click
+  const handleMarkCompletedClick = (event: Event) => {
+    setEventToComplete(event);
+    setShowCompleteConfirmModal(true);
   };
 
   useEffect(() => {
@@ -382,7 +418,7 @@ export default function EventsPage() {
                     <th className="w-[8%] border border-gray-300">Status</th>
                     <th className="w-[10%] border border-gray-300">Assigned To</th>
                     <th className="w-[12%] border border-gray-300">Designation</th>
-                    <th className="w-[8%] border border-gray-300">Actions</th>
+                    <th className="w-[12%] border border-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -428,6 +464,26 @@ export default function EventsPage() {
                       </td>
                       <td className="py-3 text-center border border-gray-300">
                         <div className="flex justify-center gap-3">
+                          {/* Mark Completed Button - Only show for events that are not completed */}
+                          {event.status !== 'completed' && (
+                            <button
+                              onClick={() => handleMarkCompletedClick(event)}
+                              className="text-green-600 hover:text-green-800 flex items-center justify-center"
+                              title="Mark Completed"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="24px"
+                                width="24px"
+                                viewBox="0 -960 960 960"
+                                fill="#5bb450"
+                                className="w-5 h-5"
+                              >
+                                <path d="M438-226 296-368l58-58 84 84 168-168 58 58-226 226ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+                              </svg>
+                            </button>
+                          )}
+
                           {/* Edit Button */}
                           <button
                             onClick={() => handleEditClick(event)}
@@ -487,6 +543,24 @@ export default function EventsPage() {
                       {event.title}
                     </h3>
                     <div className="flex gap-3 shrink-0">
+                      {/* Mark Completed Button - Only show for events that are not completed */}
+                      {event.status !== 'completed' && (
+                        <button
+                          onClick={() => handleMarkCompletedClick(event)}
+                          className="text-green-600 hover:text-green-700"
+                          title="Mark Completed"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="20px"
+                            width="20px"
+                            viewBox="0 -960 960 960"
+                            fill="#5bb450"
+                          >
+                            <path d="M438-226 296-368l58-58 84 84 168-168 58 58-226 226ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z" />
+                          </svg>
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEditClick(event)}
                         className="text-blue-500 hover:text-blue-700"
@@ -587,6 +661,34 @@ export default function EventsPage() {
         )}
 
       </div>
+
+      {/* Mark Completed Confirmation Modal */}
+      {showCompleteConfirmModal && eventToComplete && (
+        <Dialog
+          open={showCompleteConfirmModal}
+          onClose={() => setShowCompleteConfirmModal(false)}
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/50"
+        >
+          <Dialog.Panel className="bg-white rounded-lg p-6 w-96">
+            <Dialog.Title className="text-lg font-semibold">Mark as Completed</Dialog.Title>
+            <p className="mt-2">Are you sure you want to mark this event as completed?</p>
+            <div className="flex justify-end mt-4 gap-2">
+              <button
+                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                onClick={() => setShowCompleteConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => handleMarkCompleted(eventToComplete)}
+              >
+                Mark Completed
+              </button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && currentEvent && (
@@ -803,11 +905,12 @@ export default function EventsPage() {
         >
           <Dialog.Panel className="bg-white rounded p-6 w-[400px]">
             <Dialog.Title className="text-lg font-semibold">
-              Confirm Deletion
+              Confirm Delete
             </Dialog.Title>
             <p className="mt-2 text-sm text-gray-600">
               Are you sure you want to delete{" "}
-              <span className="font-medium">{eventToDelete.title}</span>?
+              <span className="font-medium">{eventToDelete.title}</span>? This
+              action cannot be undone.
             </p>
 
             <div className="flex justify-end mt-4 gap-2">
@@ -820,7 +923,7 @@ export default function EventsPage() {
               <button
                 className="bg-red-600 text-white px-4 py-2 rounded"
                 onClick={() => {
-                  if (eventToDelete) deleteEvent(eventToDelete.id);
+                  deleteEvent(eventToDelete.id);
                   setShowDeleteModal(false);
                 }}
               >
