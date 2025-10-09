@@ -15,6 +15,7 @@ interface CalendarEvent {
   start: string | Date;
   end: string | Date;
   status?: string;
+  eventType?: 'regular' | 'holiday'; // ✅ Added eventType
   assignedTo?: { user?: User; userId?: string | number }[];
 }
 
@@ -43,11 +44,6 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     end: event.end,
     assignedTo: [] as string[],
   });
-  const colors = {
-    upcoming: 'bg-blue-100 text-blue-800',
-    ongoing: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-green-100 text-green-800'
-  };
 
   // Initialize form data when event changes
   useEffect(() => {
@@ -217,8 +213,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       assignedTo: assignedIds,
     });
   };
+
   const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
-    // If event is manually marked completed, show that
     if (manualStatus?.toLowerCase() === "completed") return "Completed";
 
     const now = new Date();
@@ -227,14 +223,11 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
     if (now < startDate) return "Upcoming";
     if (now >= startDate && now <= endDate) return "Ongoing";
-    // ⬇️ If event time is over but not manually completed
     return "Pending";
   };
 
-
   // Get status badge
   const getStatusBadge = () => {
-    // Compute real-time status (uses both manual and time-based logic)
     const computedStatus = getEventStatus(event.start, event.end, event.status);
 
     const colors = {
@@ -246,22 +239,20 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
     return (
       <span
-        className={`text-xs px-2 py-1 rounded-full font-semibold ${colors[computedStatus as keyof typeof colors]
-          }`}
+        className={`text-xs px-2 py-1 rounded-full font-semibold ${colors[computedStatus as keyof typeof colors]}`}
       >
         {computedStatus}
       </span>
     );
   };
 
-
-
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <strong className="block truncate">{event.title}</strong>
-          {getStatusBadge()}
+          {/* ✅ Only show status badge for regular events */}
+          {event.eventType !== "holiday" && getStatusBadge()}
         </div>
         {event.description && (
           <p className="text-sm text-gray-700 mt-1 truncate">
@@ -276,8 +267,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
 
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
         <div className="flex-shrink-0 flex items-center gap-2 mt-2 md:mt-0 md:ml-4">
-          {/* Mark Completed Icon - Only show if status is not completed */}
-          {event.status !== 'completed' && (
+          {/* ✅ Mark Completed Icon - Only show for regular events that are not completed */}
+          {event.eventType !== "holiday" && event.status !== 'completed' && (
             <span
               title="Mark Completed"
               className="w-5 h-5 cursor-pointer"

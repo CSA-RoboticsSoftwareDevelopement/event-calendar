@@ -721,70 +721,75 @@ export default function App() {
       )}
 
       {/* Event Details Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
-          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
-            <h2 className="text-lg font-semibold mb-4">Event Details</h2>
+/* Event Details Modal */
+{selectedEvent && (
+  <div className="fixed inset-0 flex justify-center items-center z-50 bg-black/50">
+    <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+      <h2 className="text-lg font-semibold mb-4">Event Details</h2>
 
-            {/* ✅ Dynamic Status Display */}
-            <p>
-              <strong>Title:</strong> {selectedEvent.title}
-            </p>
-            <p>
-              <strong>Status:</strong>{" "}
-              {(() => {
-                const status = getEventStatus(selectedEvent.start, selectedEvent.end, selectedEvent.status);
-                const colorClass =
-                  status === "Completed"
-                    ? "bg-green-100 text-green-700"
-                    : status === "Ongoing"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : status === "Upcoming"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-gray-100 text-gray-700"; // ✅ Pending
+      <p>
+        <strong>Title:</strong> {selectedEvent.title}
+      </p>
 
-                return (
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
-                    {status}
-                  </span>
-                );
-              })()}
-            </p>
-            <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
-            <p>
-              <strong>Type:</strong>{" "}
-              {selectedEvent.eventType === "holiday" ? "Holiday" : "Regular Event"}
-            </p>
-            <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
-            <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+      {/* ✅ Only show status for regular events */}
+      {selectedEvent.eventType !== "holiday" && (
+        <p>
+          <strong>Status:</strong>{" "}
+          {(() => {
+            const status = getEventStatus(selectedEvent.start, selectedEvent.end, selectedEvent.status);
+            const colorClass =
+              status === "Completed"
+                ? "bg-green-100 text-green-700"
+                : status === "Ongoing"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : status === "Upcoming"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-gray-700"; // ✅ Pending
 
-            <p>
-              <strong>Assigned to:</strong>{" "}
-              {selectedEvent.assignedTo?.map((u) => u.user?.name).join(", ") || "—"}
-            </p>
-
-            <div className="flex justify-end gap-3 mt-6">
-              {/* ✅ Mark Completed Button (hidden if already completed) */}
-              {selectedEvent.status !== "completed" && (
-                <button
-                  onClick={() => handleMarkCompleted(selectedEvent.id)}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                >
-                  Mark Completed
-                </button>
-              )}
-
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+            return (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                {status}
+              </span>
+            );
+          })()}
+        </p>
       )}
+
+      <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
+      <p>
+        <strong>Type:</strong>{" "}
+        {selectedEvent.eventType === "holiday" ? "Holiday" : "Regular Event"}
+      </p>
+      <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
+      <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
+
+      <p>
+        <strong>Assigned to:</strong>{" "}
+        {selectedEvent.assignedTo?.map((u) => u.user?.name).join(", ") || "—"}
+      </p>
+
+      <div className="flex justify-end gap-3 mt-6">
+        {/* ✅ Mark Completed Button (only for regular events that are not completed) */}
+        {selectedEvent.eventType !== "holiday" && selectedEvent.status !== "completed" && (
+          <button
+            onClick={() => handleMarkCompleted(selectedEvent.id)}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+          >
+            Mark Completed
+          </button>
+        )}
+
+        {/* Close Button */}
+        <button
+          onClick={() => setSelectedEvent(null)}
+          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
 
