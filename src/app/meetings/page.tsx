@@ -58,6 +58,19 @@ export default function EventsPage() {
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
+  const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
+    // If event is manually marked completed, show that
+    if (manualStatus?.toLowerCase() === "completed") return "Completed";
+
+    const now = new Date();
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (now < startDate) return "Upcoming";
+    if (now >= startDate && now <= endDate) return "Ongoing";
+    // ⬇️ If event time is over but not manually completed
+    return "Pending";
+  };
 
   // Helper function to convert local date-time string to UTC ISO string
   const toUTCISOString = (localDateTime: string | Date) => {
@@ -129,17 +142,26 @@ export default function EventsPage() {
 
   // Filters events based on search term and designation filter
   const filteredEvents = events.filter((event) => {
-    // Hide past events unless user chose "all"
-    if (eventTimeFilter === "upcoming" && new Date(event.end).getTime() < Date.now()) {
+    const eventStatus = getEventStatus(event.start, event.end, event.status);
+
+    // ⏳ Filter by time / status
+    if (eventTimeFilter === "upcoming" && eventStatus !== "Upcoming" && eventStatus !== "Ongoing") {
       return false;
     }
+
+    if (eventTimeFilter === "completed" && eventStatus !== "Completed") {
+      return false;
+    }
+
+    // 🔍 Search filter
     const matchesSearch =
       event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchTerm.toLowerCase()) || // Added description to search
+      event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.assignedTo?.some((a) =>
         a.user.designation?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
+    // 🎯 Designation filter
     const matchesFilter =
       filterValue === "all" ||
       event.assignedTo?.some(
@@ -148,6 +170,7 @@ export default function EventsPage() {
 
     return matchesSearch && matchesFilter;
   });
+
 
   // Pagination logic
   const indexOfLastEvent = currentPage * eventsPerPage;
@@ -336,7 +359,9 @@ export default function EventsPage() {
             >
               <option value="upcoming">Upcoming Events</option>
               <option value="all">All Events</option>
+              <option value="completed">Completed Events</option>
             </select>
+
           </div>
         </div>
 
@@ -371,16 +396,24 @@ export default function EventsPage() {
                       <td className="py-3 px-3 font-medium border border-gray-300">{event.title}</td>
                       <td className="py-3 px-3 break-words border border-gray-300">{event.description}</td>
                       <td className="py-3 text-center border border-gray-300">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${event.status === "Completed"
-                            ? "bg-green-100 text-green-700"
-                            : event.status === "Ongoing"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-gray-100 text-gray-700"
-                            }`}
-                        >
-                          {event.status || "Pending"}
-                        </span>
+                        {(() => {
+                          const status = getEventStatus(event.start, event.end, event.status);
+                          const colorClass =
+                            status === "Completed"
+                              ? "bg-green-100 text-green-700"
+                              : status === "Ongoing"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : status === "Upcoming"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-gray-100 text-gray-700"; // ✅ Pending (time passed but not completed)
+
+                          return (
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                              {status}
+                            </span>
+                          );
+                        })()}
+
                       </td>
 
                       <td className="py-3 px-3 border border-gray-300">
@@ -482,16 +515,25 @@ export default function EventsPage() {
                     <p><span className="font-semibold">📝 Description:</span> {event.description}</p>
                     <p>
                       <span className="font-semibold">📊 Status:</span>{" "}
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${event.status === "Completed"
+                      {(() => {
+                        const status = getEventStatus(event.start, event.end, event.status);
+                        const colorClass =
+                          status === "Completed"
                             ? "bg-green-100 text-green-700"
-                            : event.status === "Ongoing"
+                            : status === "Ongoing"
                               ? "bg-yellow-100 text-yellow-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                      >
-                        {event.status || "Pending"}
-                      </span>
+                              : status === "Upcoming"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700"; // ✅ Pending (time passed but not completed)
+
+                        return (
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                            {status}
+                          </span>
+                        );
+                      })()}
+
+
                     </p>
 
                     <p>

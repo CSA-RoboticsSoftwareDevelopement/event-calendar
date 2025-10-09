@@ -43,11 +43,11 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
     end: event.end,
     assignedTo: [] as string[],
   });
-const colors = {
-  upcoming: 'bg-blue-100 text-blue-800',
-  ongoing: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-green-100 text-green-800'
-};
+  const colors = {
+    upcoming: 'bg-blue-100 text-blue-800',
+    ongoing: 'bg-yellow-100 text-yellow-800',
+    completed: 'bg-green-100 text-green-800'
+  };
 
   // Initialize form data when event changes
   useEffect(() => {
@@ -142,7 +142,7 @@ const colors = {
       }
 
       toast.success("Event marked as completed!", { id: toastId });
-      
+
       if (onEventChanged) {
         onEventChanged();
       }
@@ -155,7 +155,7 @@ const colors = {
   const handleRemoveAssignedUser = (userId?: string | number) => {
     if (!userId) return;
     const userIdStr = String(userId);
-    
+
     setFormData(prev => {
       const newAssignedTo = prev.assignedTo.filter(id => id !== userIdStr);
       return {
@@ -193,7 +193,7 @@ const colors = {
 
       setShowEditModal(false);
       toast.success("Event updated successfully!", { id: toastId });
-      
+
       if (onEventChanged) {
         onEventChanged();
       }
@@ -217,22 +217,44 @@ const colors = {
       assignedTo: assignedIds,
     });
   };
+  const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
+    // If event is manually marked completed, show that
+    if (manualStatus?.toLowerCase() === "completed") return "Completed";
+
+    const now = new Date();
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (now < startDate) return "Upcoming";
+    if (now >= startDate && now <= endDate) return "Ongoing";
+    // ⬇️ If event time is over but not manually completed
+    return "Pending";
+  };
+
 
   // Get status badge
   const getStatusBadge = () => {
-    const status = event.status || 'upcoming';
+    // Compute real-time status (uses both manual and time-based logic)
+    const computedStatus = getEventStatus(event.start, event.end, event.status);
+
     const colors = {
-      upcoming: 'bg-blue-100 text-blue-800',
-      ongoing: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800'
+      Upcoming: "bg-blue-100 text-blue-800",
+      Ongoing: "bg-yellow-100 text-yellow-800",
+      Completed: "bg-green-100 text-green-800",
+      Pending: "bg-gray-100 text-gray-800",
     };
-    
+
     return (
-      <span className={`text-xs px-2 py-1 rounded-full ${colors[status as keyof typeof colors] || colors.upcoming}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span
+        className={`text-xs px-2 py-1 rounded-full font-semibold ${colors[computedStatus as keyof typeof colors]
+          }`}
+      >
+        {computedStatus}
       </span>
     );
   };
+
+
 
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
@@ -510,7 +532,7 @@ const colors = {
                 <Dialog.Panel className="bg-white rounded-lg p-6 w-full sm:w-96">
                   <Dialog.Title className="text-lg font-semibold">Confirm Update</Dialog.Title>
                   <p className="mt-2">Are you sure you want to save changes to this event?</p>
-                  
+
                   <div className="mt-3 p-2 bg-gray-50 rounded text-sm">
                     <p className="font-medium">Assigned Users: {formData.assignedTo.length}</p>
                     {formData.assignedTo.length === 0 && (

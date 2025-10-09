@@ -15,15 +15,20 @@ import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Tippy from '@tippyjs/react';
-function getEventStatus(start: string | Date, end: string | Date) {
+const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
+  if (manualStatus?.toLowerCase() === "completed") return "Completed";
+
   const now = new Date();
   const startDate = new Date(start);
   const endDate = new Date(end);
 
   if (now < startDate) return "Upcoming";
   if (now >= startDate && now <= endDate) return "Ongoing";
-  return "Completed"; // fallback if event already ended
-}
+
+  // ✅ If event time has ended but not completed
+  return "Pending";
+};
+
 
 const localizer = momentLocalizer(moment);
 interface UserAvailability {
@@ -723,32 +728,33 @@ export default function App() {
 
             {/* ✅ Dynamic Status Display */}
             <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className={
-                  selectedEvent.status === "completed"
-                    ? "text-green-600"
-                    : getEventStatus(selectedEvent.start, selectedEvent.end) === "Ongoing"
-                      ? "text-blue-600"
-                      : "text-gray-600"
-                }
-              >
-                {selectedEvent.status === "completed"
-                  ? "Completed"
-                  : getEventStatus(selectedEvent.start, selectedEvent.end)}
-              </span>
-            </p>
-
-            <p>
-              <strong>Type:</strong>{" "}
-              {selectedEvent.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular Event"}
-            </p>
-
-            <p>
               <strong>Title:</strong> {selectedEvent.title}
             </p>
+            <p>
+              <strong>Status:</strong>{" "}
+              {(() => {
+                const status = getEventStatus(selectedEvent.start, selectedEvent.end, selectedEvent.status);
+                const colorClass =
+                  status === "Completed"
+                    ? "bg-green-100 text-green-700"
+                    : status === "Ongoing"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : status === "Upcoming"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"; // ✅ Pending
 
+                return (
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                    {status}
+                  </span>
+                );
+              })()}
+            </p>
             <p><strong>Description:</strong> {selectedEvent.description || "—"}</p>
+            <p>
+              <strong>Type:</strong>{" "}
+              {selectedEvent.eventType === "holiday" ? "Holiday" : "Regular Event"}
+            </p>
             <p><strong>Start:</strong> {toLocalDateTimeString(selectedEvent.start)}</p>
             <p><strong>End:</strong> {toLocalDateTimeString(selectedEvent.end)}</p>
 
