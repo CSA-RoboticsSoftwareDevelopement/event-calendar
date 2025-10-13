@@ -763,60 +763,82 @@ export default function App() {
       )}
 
       {/* Daily Events Modal */}
-      {showDayEventsModal && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-md w-[90%] max-w-md sm:w-full">
+{showDayEventsModal && (
+  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-2 sm:p-4">
+    {/* Scrollable container */}
+    <div className="bg-white rounded-lg shadow-md w-full max-w-md sm:max-w-lg md:max-w-xl max-h-[90vh] overflow-y-auto p-6">
+      <h2 className="text-lg font-semibold mb-4 text-center">
+        Events on {selectedDate?.toLocaleDateString()}
+      </h2>
 
-            <h2 className="text-lg font-semibold mb-4">
-              Events on {selectedDate?.toLocaleDateString()}
-            </h2>
-
-            {eventsForSelectedDate.map((event) => (
-              <div key={event.id} className="border-b py-2">
-                <p className="font-bold">{event.title}</p>
-                <p className="text-sm">Type: {event.eventType === 'holiday' ? '🏖️ Holiday' : '📅 Regular'}</p>
-                <p className="text-sm">Description: {event.description || '—'}</p>
-                <p className="text-sm">
-                  {new Date(event.start).toLocaleTimeString()} - {new Date(event.end).toLocaleTimeString()}
-                </p>
-                <p className="text-sm">
-                  Assigned to:  {Array.isArray(event.assignedTo)
-                    ? event.assignedTo.map(u => u.user?.name).join(', ')
-                    : typeof event.assignedTo === 'object' && event.assignedTo !== null && 'user' in event.assignedTo
-                      ? (event.assignedTo as { user?: { name?: string } }).user?.name || '—'
-                      : '—'}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-                    onClick={() => {
-                      setSelectedEvent(event);
-                      setShowDayEventsModal(false);
-                    }}
-                  >
-                    View
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-red-500 text-white rounded text-sm"
-                    onClick={() => handleDeleteEvent(event.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+      {/* Scrollable event list */}
+      <div className="space-y-4">
+        {eventsForSelectedDate.length > 0 ? (
+          eventsForSelectedDate.map((event) => (
+            <div
+              key={event.id}
+              className="border rounded-md p-3 bg-gray-50 hover:bg-gray-100 transition"
+            >
+              <p className="font-bold text-gray-800">{event.title}</p>
+              <p className="text-sm text-gray-600">
+                Type:{" "}
+                {event.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular"}
+              </p>
+              <p className="text-sm text-gray-600">
+                Description: {event.description || "—"}
+              </p>
+              <p className="text-sm text-gray-600">
+                {new Date(event.start).toLocaleTimeString()} -{" "}
+                {new Date(event.end).toLocaleTimeString()}
+              </p>
+              <p className="text-sm text-gray-600">
+                Assigned to:{" "}
+                {Array.isArray(event.assignedTo)
+                  ? event.assignedTo.map((u) => u.user?.name).join(", ")
+                  : typeof event.assignedTo === "object" &&
+                    event.assignedTo !== null &&
+                    "user" in event.assignedTo
+                  ? (event.assignedTo as { user?: { name?: string } }).user
+                      ?.name || "—"
+                  : "—"}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                  onClick={() => {
+                    setSelectedEvent(event);
+                    setShowDayEventsModal(false);
+                  }}
+                >
+                  View
+                </button>
+                <button
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                  onClick={() => handleDeleteEvent(event.id)}
+                >
+                  Delete
+                </button>
               </div>
-            ))}
-
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowDayEventsModal(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
-              >
-                Close
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No events found.</p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => setShowDayEventsModal(false)}
+          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       {showPermissionModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-sm z-50">
