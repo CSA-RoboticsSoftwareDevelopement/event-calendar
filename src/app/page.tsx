@@ -527,7 +527,7 @@ export default function App() {
       >
         {truncatedTitle}
         {event.status?.toLowerCase() === "completed" && (
-          <span className="ml-1 text-white/80">()</span>
+          <span className="ml-1 text-white/80"></span>
         )}
       </div>
 
