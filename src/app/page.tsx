@@ -494,7 +494,13 @@ export default function App() {
             event: ({ event }) => {
               const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
               const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
-
+  // ✅ Set grey background only for completed events
+  const backgroundColorr =
+    event.status?.toLowerCase() === "completed"
+      ? "#9ca3af" // Tailwind gray-400
+      : event.eventType === "holiday"
+      ? "#ef4444"
+      : "#4f46e5";
               return (
                 <Tippy
                   content={
@@ -511,12 +517,20 @@ export default function App() {
                   theme="light-border"
                   placement="top"
                 >
-                  <div
-                    className="text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition"
-                    style={{ backgroundColor }}
-                  >
-                    {truncatedTitle} {event.isCompleted && <span className="text-green-200">(Event Completed)</span>}
-                  </div>
+      <div
+        className={`text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition ${
+          event.status?.toLowerCase() === "completed"
+            ? "line-through opacity-75"
+            : ""
+        }`}
+        style={{  backgroundColor: backgroundColorr }} // Use the determined background color
+      >
+        {truncatedTitle}
+        {event.status?.toLowerCase() === "completed" && (
+          <span className="ml-1 text-white/80">()</span>
+        )}
+      </div>
+
                 </Tippy>
               );
             },
