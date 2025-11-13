@@ -32,6 +32,61 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
         icon: '🚧',
       });
     };
+    const ClockBrisbane: React.FC = () => {
+      const [dateTime, setDateTime] = useState<{ time: string; date: string; tz: string }>({
+        time: "",
+        date: "",
+        tz: "",
+      });
+
+      useEffect(() => {
+        const updateClock = () => {
+          const now = new Date();
+
+          const time = new Intl.DateTimeFormat("en-AU", {
+            timeZone: "Australia/Brisbane",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }).format(now);
+
+          const date = new Intl.DateTimeFormat("en-AU", {
+            timeZone: "Australia/Brisbane",
+            weekday: "short",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }).format(now);
+
+          const tz =
+            new Intl.DateTimeFormat("en-AU", {
+              timeZone: "Australia/Brisbane",
+              timeZoneName: "short",
+            })
+              .formatToParts(now)
+              .find((part) => part.type === "timeZoneName")?.value || "AEST";
+
+          setDateTime({ time, date, tz });
+        };
+
+        updateClock();
+        const interval = setInterval(updateClock, 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      return (
+        <div className="flex flex-col items-end justify-center font-mono text-blue-900 leading-tight">
+          <span className="text-xs sm:text-sm font-semibold">{dateTime.date}</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm sm:text-base font-bold">{dateTime.time}</span>
+            <span className="text-[10px] sm:text-xs text-blue-600">{dateTime.tz}</span>
+          </div>
+        </div>
+      );
+    };
+
+
     useEffect(() => {
       const roleStored = sessionStorage.getItem("role");
       if (roleStored) {
@@ -66,6 +121,16 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
             <h1 className="text-xl font-bold">🗓️<span className='ml-1'>CSA Events</span></h1>
             <div className="flex items-center gap-2">
 
+              {/* 🕒 Brisbane Time Display */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-md">
+                <div className="flex flex-col items-center justify-center text-blue-700">
+                  <span className="text-xl leading-none">🇦🇺</span>
+                  <span className="text-[10px] font-semibold">Brisbane</span>
+                </div>
+                <ClockBrisbane />
+              </div>
+
+
               <Tippy content="Home">
                 <button
                   onClick={() => (window.location.href = 'https://csaappstore.com/')}
@@ -95,8 +160,8 @@ const ThemeProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNo
                     }}
                     disabled={roleValue !== '1'}
                     className={`w-10 h-10 flex justify-center items-center rounded transition-colors duration-200 ${roleValue === '1'
-                        ? 'bg-gray-300 text-black hover:bg-gray-200'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-300 text-black hover:bg-gray-200'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                   >
                     <svg

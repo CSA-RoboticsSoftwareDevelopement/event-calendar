@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
+import moment from 'moment-timezone'; // ⬅️ make sure this import is there
 import 'tippy.js/dist/tippy.css';
 import { useRouter } from 'next/navigation';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -16,6 +16,7 @@ import { Toaster } from 'react-hot-toast';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Tippy from '@tippyjs/react';
 
+
 const getEventStatus = (start: string | Date, end: string | Date, manualStatus?: string) => {
   if (manualStatus?.toLowerCase() === "completed") return "Completed";
 
@@ -29,6 +30,21 @@ const getEventStatus = (start: string | Date, end: string | Date, manualStatus?:
   // ✅ If event time has ended but not completed
   return "Pending";
 };
+
+
+moment.tz.setDefault('Australia/Brisbane');
+
+// ✅ Use 24-hour time format for the entire calendar
+moment.updateLocale('en', {
+  longDateFormat: {
+    LT: 'HH:mm',       // 24-hour format for time
+    LTS: 'HH:mm:ss',   // 24-hour format with seconds
+    L: 'DD/MM/YYYY',
+    LL: 'D MMMM YYYY',
+    LLL: 'D MMMM YYYY HH:mm',
+    LLLL: 'dddd, D MMMM YYYY HH:mm',
+  },
+});
 
 const localizer = momentLocalizer(moment);
 
@@ -60,35 +76,35 @@ export default function App() {
   const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 1024); // default width for SSR
   const usersPerPage = windowWidth < 760 ? 9 : windowWidth >= 760 && windowWidth < 1280 ? 15 : 19;
   console.log(windowWidth);
-  
+
   //Authentication  
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [countdown, setCountdown] = useState(5); // 5 seconds
   const [realUname, setRealUname] = useState("");
-  
+
   //Authentication  
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     const handleResize = () => {
       window.addEventListener('resize', () => {
         setWindowWidth(window.innerWidth);
       });
     };
-    
+
     handleResize();
     const params = new URLSearchParams(window.location.search);
     const uidParam = params.get("uid");
     const unameParam = params.get("uname");
     const roleParam = params.get("role"); // <-- added user_role
-    
+
     if (uidParam && unameParam && roleParam) {
       // ✅ Save from URL into sessionStorage
       sessionStorage.setItem("uid", uidParam);
       sessionStorage.setItem("uname", unameParam);
       sessionStorage.setItem("role", roleParam); // <-- store role
       console.log("📦 Encoded session stored:", { uidParam, unameParam, roleParam });
-      
+
       try {
         const decodedUid = atob(uidParam);
         const decodedUname = atob(unameParam);
@@ -178,9 +194,19 @@ export default function App() {
     const toastId = toast.loading('Creating event...');
 
     try {
-      // Convert local time to UTC ISO string
-      const startUTC = new Date(start).toISOString();
-      const endUTC = new Date(end).toISOString();
+      // 🕒 Convert Brisbane local time to UTC ISO string
+      const toUTCFromBrisbane = (localValue: string) => {
+        const [datePart, timePart] = localValue.split("T");
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hour, minute] = timePart.split(":").map(Number);
+        // AEST = UTC+10 → subtract 10 hours
+        const utcDate = new Date(Date.UTC(year, month - 1, day, hour - 10, minute));
+        return utcDate.toISOString();
+      };
+
+      const startUTC = toUTCFromBrisbane(start);
+      const endUTC = toUTCFromBrisbane(end);
+
 
       const res = await fetch('/api/events', {
         method: 'POST',
@@ -273,14 +299,17 @@ export default function App() {
 
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
-    return date.toLocaleString([], {
+    return date.toLocaleString('en-AU', {
+      timeZone: 'Australia/Brisbane',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false, // optional, set true if you prefer AM/PM format
     });
   };
+
 
   const handleMarkCompleted = async (eventId: number) => {
     try {
@@ -494,13 +523,13 @@ export default function App() {
             event: ({ event }) => {
               const truncatedTitle = event.title.length > 20 ? event.title.slice(0, 20) + "…" : event.title;
               const backgroundColor = event.eventType === 'holiday' ? "#ef4444" : "#4f46e5";
-  // ✅ Set grey background only for completed events
-  const backgroundColorr =
-    event.status?.toLowerCase() === "completed"
-      ? "#9ca3af" // Tailwind gray-400
-      : event.eventType === "holiday"
-      ? "#ef4444"
-      : "#4f46e5";
+              // ✅ Set grey background only for completed events
+              const backgroundColorr =
+                event.status?.toLowerCase() === "completed"
+                  ? "#9ca3af" // Tailwind gray-400
+                  : event.eventType === "holiday"
+                    ? "#ef4444"
+                    : "#4f46e5";
               return (
                 <Tippy
                   content={
@@ -517,19 +546,19 @@ export default function App() {
                   theme="light-border"
                   placement="top"
                 >
-      <div
-        className={`text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition ${
-          event.status?.toLowerCase() === "completed"
-            ? "line-through opacity-75"
-            : ""
-        }`}
-        style={{  backgroundColor: backgroundColorr }} // Use the determined background color
-      >
-        {truncatedTitle}
-        {event.status?.toLowerCase() === "completed" && (
-          <span className="ml-1 text-white/80"></span>
-        )}
-      </div>
+                  <div
+                    className={`text-white text-xs rounded px-2 py-1 truncate cursor-pointer shadow-sm transition ${event.status?.toLowerCase() === "completed"
+                      ? "line-through opacity-75"
+                      : ""
+                      }`}
+                    style={{ backgroundColor: backgroundColorr }} // Use the determined background color
+                    title=''
+                  >
+                    {truncatedTitle}
+                    {event.status?.toLowerCase() === "completed" && (
+                      <span className="ml-1 text-white/80"></span>
+                    )}
+                  </div>
 
                 </Tippy>
               );
@@ -777,81 +806,81 @@ export default function App() {
       )}
 
       {/* Daily Events Modal */}
-{showDayEventsModal && (
-  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-2 sm:p-4">
-    {/* Scrollable container */}
-    <div className="bg-white rounded-lg shadow-md w-full max-w-md sm:max-w-lg md:max-w-xl max-h-[90vh] overflow-y-auto p-6">
-      <h2 className="text-lg font-semibold mb-4 text-center">
-        Events on {selectedDate?.toLocaleDateString()}
-      </h2>
+      {showDayEventsModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-2 sm:p-4">
+          {/* Scrollable container */}
+          <div className="bg-white rounded-lg shadow-md w-full max-w-md sm:max-w-lg md:max-w-xl max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-lg font-semibold mb-4 text-center">
+              Events on {selectedDate?.toLocaleDateString()}
+            </h2>
 
-      {/* Scrollable event list */}
-      <div className="space-y-4">
-        {eventsForSelectedDate.length > 0 ? (
-          eventsForSelectedDate.map((event) => (
-            <div
-              key={event.id}
-              className="border rounded-md p-3 bg-gray-50 hover:bg-gray-100 transition"
-            >
-              <p className="font-bold text-gray-800">{event.title}</p>
-              <p className="text-sm text-gray-600">
-                Type:{" "}
-                {event.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular"}
-              </p>
-              <p className="text-sm text-gray-600">
-                Description: {event.description || "—"}
-              </p>
-              <p className="text-sm text-gray-600">
-                {new Date(event.start).toLocaleTimeString()} -{" "}
-                {new Date(event.end).toLocaleTimeString()}
-              </p>
-              <p className="text-sm text-gray-600">
-                Assigned to:{" "}
-                {Array.isArray(event.assignedTo)
-                  ? event.assignedTo.map((u) => u.user?.name).join(", ")
-                  : typeof event.assignedTo === "object" &&
-                    event.assignedTo !== null &&
-                    "user" in event.assignedTo
-                  ? (event.assignedTo as { user?: { name?: string } }).user
-                      ?.name || "—"
-                  : "—"}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                <button
-                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-                  onClick={() => {
-                    setSelectedEvent(event);
-                    setShowDayEventsModal(false);
-                  }}
-                >
-                  View
-                </button>
-                <button
-                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                  onClick={() => handleDeleteEvent(event.id)}
-                >
-                  Delete
-                </button>
-              </div>
+            {/* Scrollable event list */}
+            <div className="space-y-4">
+              {eventsForSelectedDate.length > 0 ? (
+                eventsForSelectedDate.map((event) => (
+                  <div
+                    key={event.id}
+                    className="border rounded-md p-3 bg-gray-50 hover:bg-gray-100 transition"
+                  >
+                    <p className="font-bold text-gray-800">{event.title}</p>
+                    <p className="text-sm text-gray-600">
+                      Type:{" "}
+                      {event.eventType === "holiday" ? "🏖️ Holiday" : "📅 Regular"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Description: {event.description || "—"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(event.start).toLocaleTimeString()} -{" "}
+                      {new Date(event.end).toLocaleTimeString()}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Assigned to:{" "}
+                      {Array.isArray(event.assignedTo)
+                        ? event.assignedTo.map((u) => u.user?.name).join(", ")
+                        : typeof event.assignedTo === "object" &&
+                          event.assignedTo !== null &&
+                          "user" in event.assignedTo
+                          ? (event.assignedTo as { user?: { name?: string } }).user
+                            ?.name || "—"
+                          : "—"}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button
+                        className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                        onClick={() => {
+                          setSelectedEvent(event);
+                          setShowDayEventsModal(false);
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                        onClick={() => handleDeleteEvent(event.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500">No events found.</p>
+              )}
             </div>
-          ))
-        ) : (
-          <p className="text-center text-gray-500">No events found.</p>
-        )}
-      </div>
 
-      {/* Footer */}
-      <div className="flex justify-end mt-6">
-        <button
-          onClick={() => setShowDayEventsModal(false)}
-          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            {/* Footer */}
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowDayEventsModal(false)}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPermissionModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">

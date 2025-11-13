@@ -61,8 +61,9 @@ export async function POST(req: Request) {
 
     // Determine initial status based on current time
     const now = new Date();
-    const startDate = new Date(body.start);
-    const endDate = new Date(body.end);
+    const startDate = new Date(new Date(body.start).toISOString()); // Force UTC
+    const endDate = new Date(new Date(body.end).toISOString()); // Force UTC
+
     const today8am = new Date();
     today8am.setHours(8, 0, 0, 0);
 
@@ -287,9 +288,9 @@ export async function PUT(req: Request) {
   } catch (err: unknown) {
     console.error("Failed to update event:", err);
     return NextResponse.json(
-      { 
-        error: "Failed to update event", 
-        details: err instanceof Error ? err.message : "Unknown error" 
+      {
+        error: "Failed to update event",
+        details: err instanceof Error ? err.message : "Unknown error"
       },
       { status: 500 }
     );

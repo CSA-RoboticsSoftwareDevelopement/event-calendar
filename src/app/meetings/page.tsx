@@ -82,22 +82,46 @@ export default function EventsPage() {
 
 
   // Helper function to convert local date-time string to UTC ISO string
-  const toUTCISOString = (localDateTime: string | Date) => {
-    const date =
-      typeof localDateTime === "string"
-        ? new Date(localDateTime)
-        : localDateTime;
-    return new Date(localDateTime).toISOString();
+  const toUTCISOString = (brisbaneDateTime: string | Date) => {
+    // Parse local Brisbane datetime string (like "2025-11-13T19:37")
+    const date = typeof brisbaneDateTime === "string"
+      ? new Date(brisbaneDateTime)
+      : brisbaneDateTime;
+
+    // Get the timezone offset for Brisbane (+10 or +11 depending on DST)
+    const offsetMinutes = -new Date().toLocaleString("en-US", {
+      timeZone: "Australia/Brisbane",
+    });
+
+    // Correct way — subtract the Brisbane offset from local time
+    const utcDate = new Date(
+      date.getTime() - (date.getTimezoneOffset() + 600) * 60000
+    );
+
+    return utcDate.toISOString();
   };
+
+
 
   // Helper function to convert UTC ISO string to local date-time string for form input
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: "Australia/Brisbane",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    };
+
+    const parts = new Intl.DateTimeFormat("en-AU", options).formatToParts(date);
+    const lookup = Object.fromEntries(parts.map(p => [p.type, p.value]));
+
+    return `${lookup.year}-${lookup.month}-${lookup.day}T${lookup.hour}:${lookup.minute}`;
   };
+
 
   // Fetch users for the edit modal dropdown on component mount
   useEffect(() => {
@@ -195,15 +219,21 @@ export default function EventsPage() {
 
   // Formatting helpers for date and time display
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(dateString).toLocaleDateString("en-AU", {
+      timeZone: "Australia/Brisbane",
     });
   };
+
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("en-AU", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Australia/Brisbane",
+    });
+  };
+
 
   // Handles event deletion with a confirmation toast
   const deleteEvent = async (id: number) => {
@@ -250,8 +280,20 @@ export default function EventsPage() {
       console.log('FormData assignedTo:', formData.assignedTo);
       console.log('Available users:', users);
       console.log('Current event assigned users:', currentEvent?.assignedTo);
+
+      // 🕒 Log Brisbane → UTC time conversion only
+      const startUTC = new Date(toUTCISOString(formData.start));
+      const endUTC = new Date(toUTCISOString(formData.end));
+
+      console.log("🕒 Brisbane → UTC (time only):", {
+        startBrisbane: formData.start.split("T")[1],
+        startUTC: startUTC.toISOString().split("T")[1].split("Z")[0],
+        endBrisbane: formData.end.split("T")[1],
+        endUTC: endUTC.toISOString().split("T")[1].split("Z")[0],
+      });
     }
-  }, [showEditModal, formData.assignedTo, users, currentEvent]);
+  }, [showEditModal, formData.start, formData.end, formData.assignedTo, users, currentEvent]);
+
 
   // Handles saving the updated event data
   const handleSave = async (currentEvent: Event) => {

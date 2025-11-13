@@ -25,11 +25,29 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
   const [users, setUsers] = useState<User[]>([]);
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
   const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false);
+  const toUTCISOString = (brisbaneDateTime: string | Date) => {
+    // Always convert input to "YYYY-MM-DDTHH:mm" string (ignore local timezone)
+    const input =
+      typeof brisbaneDateTime === "string"
+        ? brisbaneDateTime
+        : `${brisbaneDateTime.getFullYear()}-${String(brisbaneDateTime.getMonth() + 1).padStart(2, "0")}-${String(brisbaneDateTime.getDate()).padStart(2, "0")}T${String(brisbaneDateTime.getHours()).padStart(2, "0")}:${String(brisbaneDateTime.getMinutes()).padStart(2, "0")}`;
 
-  const toUTCISOString = (localDateTime: string | Date) => {
-    const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
-    return date.toISOString();
+
+    // Manually parse components (no Date() parsing!)
+    const [datePart, timePart] = input.split("T");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute] = timePart.split(":").map(Number);
+
+    // Brisbane is UTC+10 → subtract 10 hours to get UTC
+    // Construct UTC date directly in milliseconds
+    const utcMillis = Date.UTC(year, month - 1, day, hour - 10, minute);
+
+    // Return ISO string
+    return new Date(utcMillis).toISOString();
   };
+
+
+
 
   const toLocalDateTimeString = (utcString: string | Date) => {
     const date = new Date(utcString);
@@ -51,12 +69,16 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
       ?.map(a => a.user?.id ?? a.userId)
       .filter(Boolean)
       .map(String) || [];
-
+    const convertUTCToBrisbane = (utcString: string | Date) => {
+      const date = new Date(utcString);
+      // Convert to Brisbane timezone (UTC+10 or UTC+11 depending on DST)
+      return new Date(date.toLocaleString("en-US", { timeZone: "Australia/Brisbane" }));
+    };
     setFormData({
-      title: event.title,
+      title: event.title || "Untitled Event",
       description: event.description || '',
-      start: event.start,
-      end: event.end,
+      start: convertUTCToBrisbane(event.start),
+      end: convertUTCToBrisbane(event.end),
       assignedTo: assignedIds,
     });
   }, [event]);
@@ -175,6 +197,8 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         end: toUTCISOString(formData.end),
         assignedTo: finalAssignedTo,
       };
+      console.log("🕒 Form Data (Brisbane local):", formData.start, formData.end);
+      console.log("🌏 Converted to UTC ISO:", payload.start, payload.end);
 
       const res = await fetch(`/api/events/${event.id}`, {
         method: "PUT",
@@ -252,7 +276,7 @@ export const CustomAgendaEvent = ({ event, onEventChanged }: { event: CalendarEv
         <div className="flex items-center gap-2">
           <strong className="block truncate">{event.title}</strong>
           {/* ✅ Only show status badge for regular events */}
-           {event.eventType === "holiday" ? (
+          {event.eventType === "holiday" ? (
             <span className="text-xs px-2 py-1 rounded-full font-semibold bg-red-100 text-red-700">
               Holiday
             </span>
