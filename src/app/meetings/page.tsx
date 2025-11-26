@@ -12,6 +12,15 @@ import {
 import { toast } from "react-hot-toast";
 import { Dialog } from "@headlessui/react";
 
+// Add these types to your existing type definitions
+type UserAvailability = {
+  id: number;
+  name: string;
+  isBusy: boolean;
+  nextAvailable: string;
+  availableSlots?: { start: string; end: string }[];
+};
+
 // Define the data types for users and events
 type User = {
   id: number;
@@ -62,7 +71,8 @@ export default function EventsPage() {
   const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false);
   const [eventToComplete, setEventToComplete] = useState<Event | null>(null);
   const eventsContainerRef = useRef<HTMLDivElement | null>(null);
-
+  const [availableUsers, setAvailableUsers] = useState<UserAvailability[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
   const getEventStatus = (event: Event) => {
     // If eventType is holiday, show "Holiday"
     if (event.eventType?.toLowerCase() === "holiday") return "Holiday";
@@ -79,28 +89,50 @@ export default function EventsPage() {
 
     return "Pending"; // Event time over but not completed
   };
+// Add this function to fetch user availability
+const fetchUserAvailability = async (start: string, end: string) => {
+  if (!start || !end) return;
+  
+  setLoadingAvailability(true);
+  try {
+    // Convert Brisbane local time to UTC for API call (same as in your agenda view)
+    const startUTC = toUTCISOString(start);
+    const endUTC = toUTCISOString(end);
 
-
-  // Helper function to convert local date-time string to UTC ISO string
-  const toUTCISOString = (brisbaneDateTime: string | Date) => {
-    // Parse local Brisbane datetime string (like "2025-11-13T19:37")
-    const date = typeof brisbaneDateTime === "string"
-      ? new Date(brisbaneDateTime)
-      : brisbaneDateTime;
-
-    // Get the timezone offset for Brisbane (+10 or +11 depending on DST)
-    const offsetMinutes = -new Date().toLocaleString("en-US", {
-      timeZone: "Australia/Brisbane",
+    console.log('🕒 Fetching availability for:', { 
+      localStart: start, 
+      localEnd: end,
+      utcStart: startUTC,
+      utcEnd: endUTC
     });
 
-    // Correct way — subtract the Brisbane offset from local time
-    const utcDate = new Date(
-      date.getTime() - (date.getTimezoneOffset() + 600) * 60000
-    );
+    const res = await fetch(`/api/users/availability?start=${startUTC}&end=${endUTC}`);
+    const data = await res.json();
+    console.log('📊 Availability data received:', data);
+    setAvailableUsers(data);
+  } catch (error) {
+    console.error('❌ Error fetching availability:', error);
+    toast.error('Failed to load user availability');
+  } finally {
+    setLoadingAvailability(false);
+  }
+};
 
-    return utcDate.toISOString();
-  };
+  // Helper function to convert local date-time string to UTC ISO string
+// Update your toUTCISOString function to match the agenda view
+const toUTCISOString = (brisbaneDateTime: string | Date) => {
+  const input =
+    typeof brisbaneDateTime === "string"
+      ? brisbaneDateTime
+      : `${brisbaneDateTime.getFullYear()}-${String(brisbaneDateTime.getMonth() + 1).padStart(2, "0")}-${String(brisbaneDateTime.getDate()).padStart(2, "0")}T${String(brisbaneDateTime.getHours()).padStart(2, "0")}:${String(brisbaneDateTime.getMinutes()).padStart(2, "0")}`;
 
+  const [datePart, timePart] = input.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+
+  const utcMillis = Date.UTC(year, month - 1, day, hour - 10, minute);
+  return new Date(utcMillis).toISOString();
+};
 
 
   // Helper function to convert UTC ISO string to local date-time string for form input
@@ -375,7 +407,24 @@ export default function EventsPage() {
       eventsContainerRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [currentPage]);
+// Add this useEffect to fetch availability when edit modal opens or dates change
+useEffect(() => {
+  if (!showEditModal || !formData.start || !formData.end) {
+    setAvailableUsers([]);
+    return;
+  }
 
+  // Fetch availability when modal opens or dates change
+  fetchUserAvailability(formData.start, formData.end);
+}, [formData.start, formData.end, showEditModal]);
+
+// Also reset availability when modal closes
+useEffect(() => {
+  if (!showEditModal) {
+    setAvailableUsers([]);
+    setLoadingAvailability(false);
+  }
+}, [showEditModal]);
   return (
     <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
       <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
@@ -829,69 +878,124 @@ export default function EventsPage() {
               </div>
 
               {/* Assigned Users - Fixed Section */}
-              <div>
-                <label className="block mb-1 font-medium">Assign to</label>
+{/* Assigned Users - Enhanced with Availability */}
+<div>
+  <label className="block mb-1 font-medium">Assign to (based on availability)</label>
 
-                {formData.assignedTo.length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
-                    <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
-                    <ul className="list-none text-sm space-y-1">
-                      {formData.assignedTo.map((userId) => {
-                        const user = users.find(u => String(u.id) === userId);
-                        if (!user) return null;
-                        return (
-                          <li key={user.id} className="flex items-center justify-between py-1">
-                            <span>{user.name}</span>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleRemoveAssignedUser(user.id);
-                              }}
-                              className="text-gray-500 hover:text-red-600 p-1"
-                              title="Remove user"
-                              type="button"
-                            >
-                              <X size={16} />
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+  {/* Availability loading state */}
+  {loadingAvailability && (
+    <p className="text-xs my-1 text-blue-500">Loading availability...</p>
+  )}
+
+  {/* Show availability summary */}
+  {/* {availableUsers.length > 0 && !loadingAvailability && (
+    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 mb-2">
+      <p className="font-semibold">Availability Summary:</p>
+      <p className="text-xs">
+        Available: {availableUsers.filter(u => !u.isBusy).length} users | 
+        Busy: {availableUsers.filter(u => u.isBusy).length} users
+      </p>
+    </div>
+  )} */}
+
+  {formData.assignedTo.length > 0 && (
+    <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
+      <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
+      <ul className="list-none text-sm space-y-1">
+        {formData.assignedTo.map((userId) => {
+          const user = users.find(u => String(u.id) === userId);
+          if (!user) return null;
+          
+          // Check availability status for this user
+          const availability = availableUsers.find(au => au.id === user.id);
+          
+          return (
+            <li key={user.id} className="flex items-center justify-between py-1">
+              <div className="flex items-center gap-2">
+                <span>{user.name}</span>
+                {availability && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    availability.isBusy 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {availability.isBusy ? 'Busy' : 'Available'}
+                  </span>
                 )}
-
-                {formData.assignedTo.length === 0 && (
-                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                    No users assigned. Select users from the list below.
-                  </div>
-                )}
-
-                <select
-                  multiple
-                  className="w-full border px-3 py-2 rounded h-32"
-                  value={formData.assignedTo}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      assignedTo: selected,
-                    }));
-                    console.log('Selected from dropdown:', selected);
-                  }}
-                >
-                  {users.map(user => (
-                    <option
-                      key={user.id}
-                      value={String(user.id)}
-                      className={formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
-                    >
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple users</p>
               </div>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRemoveAssignedUser(user.id);
+                }}
+                className="text-gray-500 hover:text-red-600 p-1"
+                title="Remove user"
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  )}
+
+  {formData.assignedTo.length === 0 && (
+    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+      No users assigned. Select users from the list below.
+    </div>
+  )}
+
+  {/* Enhanced dropdown with availability information */}
+  <select
+    multiple
+    className="w-full border px-3 py-2 rounded h-32"
+    value={formData.assignedTo}
+    onChange={(e) => {
+      const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+      setFormData(prev => ({
+        ...prev,
+        assignedTo: selected,
+      }));
+      console.log('Selected from dropdown:', selected);
+    }}
+  >
+    {(availableUsers.length > 0 ? availableUsers : users).map(user => {
+      const isAvailableUser = (u: any): u is UserAvailability => 
+        'isBusy' in u && 'nextAvailable' in u;
+
+      return (
+        <option
+          key={user.id}
+          value={String(user.id)}
+          disabled={isAvailableUser(user) && user.isBusy}
+          className={`
+            ${formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
+            ${isAvailableUser(user) && user.isBusy ? "text-red-500 bg-red-50" : ""}
+            ${isAvailableUser(user) && !user.isBusy ? "text-green-600" : ""}
+          `}
+        >
+          {user.name}
+          {isAvailableUser(user) && user.isBusy 
+            ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', { 
+                timeZone: 'Australia/Brisbane',
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+              })})`
+            : isAvailableUser(user) && !user.isBusy 
+              ? ' (Available)'
+              : ''}
+        </option>
+      );
+    })}
+  </select>
+  <p className="text-xs text-gray-500 mt-1">
+    Hold Ctrl/Cmd to select multiple users 
+  </p>
+</div>
             </div>
 
             {/* Footer */}
