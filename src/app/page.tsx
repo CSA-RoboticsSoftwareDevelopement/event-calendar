@@ -664,7 +664,7 @@ export default function App() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-sm z-50">
             <h2 className="text-lg font-semibold text-red-600 mb-2">Access Denied</h2>
-            <p className="text-gray-700">You don't have permission to access this page. Redirecting…</p>
+            <p className="text-gray-700">You don&#39;t have permission to access this page. Redirecting…</p>
             <p className="mt-3 text-sm text-gray-500">You will be redirected in {countdown} second{countdown > 1 ? "s" : ""}.</p>
           </div>
         </div>

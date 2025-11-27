@@ -89,50 +89,50 @@ export default function EventsPage() {
 
     return "Pending"; // Event time over but not completed
   };
-// Add this function to fetch user availability
-const fetchUserAvailability = async (start: string, end: string) => {
-  if (!start || !end) return;
-  
-  setLoadingAvailability(true);
-  try {
-    // Convert Brisbane local time to UTC for API call (same as in your agenda view)
-    const startUTC = toUTCISOString(start);
-    const endUTC = toUTCISOString(end);
+  // Add this function to fetch user availability
+  const fetchUserAvailability = async (start: string, end: string) => {
+    if (!start || !end) return;
 
-    console.log('🕒 Fetching availability for:', { 
-      localStart: start, 
-      localEnd: end,
-      utcStart: startUTC,
-      utcEnd: endUTC
-    });
+    setLoadingAvailability(true);
+    try {
+      // Convert Brisbane local time to UTC for API call (same as in your agenda view)
+      const startUTC = toUTCISOString(start);
+      const endUTC = toUTCISOString(end);
 
-    const res = await fetch(`/api/users/availability?start=${startUTC}&end=${endUTC}`);
-    const data = await res.json();
-    console.log('📊 Availability data received:', data);
-    setAvailableUsers(data);
-  } catch (error) {
-    console.error('❌ Error fetching availability:', error);
-    toast.error('Failed to load user availability');
-  } finally {
-    setLoadingAvailability(false);
-  }
-};
+      console.log('🕒 Fetching availability for:', {
+        localStart: start,
+        localEnd: end,
+        utcStart: startUTC,
+        utcEnd: endUTC
+      });
+
+      const res = await fetch(`/api/users/availability?start=${startUTC}&end=${endUTC}`);
+      const data = await res.json();
+      console.log('📊 Availability data received:', data);
+      setAvailableUsers(data);
+    } catch (error) {
+      console.error('❌ Error fetching availability:', error);
+      toast.error('Failed to load user availability');
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
 
   // Helper function to convert local date-time string to UTC ISO string
-// Update your toUTCISOString function to match the agenda view
-const toUTCISOString = (brisbaneDateTime: string | Date) => {
-  const input =
-    typeof brisbaneDateTime === "string"
-      ? brisbaneDateTime
-      : `${brisbaneDateTime.getFullYear()}-${String(brisbaneDateTime.getMonth() + 1).padStart(2, "0")}-${String(brisbaneDateTime.getDate()).padStart(2, "0")}T${String(brisbaneDateTime.getHours()).padStart(2, "0")}:${String(brisbaneDateTime.getMinutes()).padStart(2, "0")}`;
+  // Update your toUTCISOString function to match the agenda view
+  const toUTCISOString = (brisbaneDateTime: string | Date) => {
+    const input =
+      typeof brisbaneDateTime === "string"
+        ? brisbaneDateTime
+        : `${brisbaneDateTime.getFullYear()}-${String(brisbaneDateTime.getMonth() + 1).padStart(2, "0")}-${String(brisbaneDateTime.getDate()).padStart(2, "0")}T${String(brisbaneDateTime.getHours()).padStart(2, "0")}:${String(brisbaneDateTime.getMinutes()).padStart(2, "0")}`;
 
-  const [datePart, timePart] = input.split("T");
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute] = timePart.split(":").map(Number);
+    const [datePart, timePart] = input.split("T");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute] = timePart.split(":").map(Number);
 
-  const utcMillis = Date.UTC(year, month - 1, day, hour - 10, minute);
-  return new Date(utcMillis).toISOString();
-};
+    const utcMillis = Date.UTC(year, month - 1, day, hour - 10, minute);
+    return new Date(utcMillis).toISOString();
+  };
 
 
   // Helper function to convert UTC ISO string to local date-time string for form input
@@ -407,24 +407,24 @@ const toUTCISOString = (brisbaneDateTime: string | Date) => {
       eventsContainerRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [currentPage]);
-// Add this useEffect to fetch availability when edit modal opens or dates change
-useEffect(() => {
-  if (!showEditModal || !formData.start || !formData.end) {
-    setAvailableUsers([]);
-    return;
-  }
+  // Add this useEffect to fetch availability when edit modal opens or dates change
+  useEffect(() => {
+    if (!showEditModal || !formData.start || !formData.end) {
+      setAvailableUsers([]);
+      return;
+    }
 
-  // Fetch availability when modal opens or dates change
-  fetchUserAvailability(formData.start, formData.end);
-}, [formData.start, formData.end, showEditModal]);
+    // Fetch availability when modal opens or dates change
+    fetchUserAvailability(formData.start, formData.end);
+  }, [formData.start, formData.end, showEditModal]);
 
-// Also reset availability when modal closes
-useEffect(() => {
-  if (!showEditModal) {
-    setAvailableUsers([]);
-    setLoadingAvailability(false);
-  }
-}, [showEditModal]);
+  // Also reset availability when modal closes
+  useEffect(() => {
+    if (!showEditModal) {
+      setAvailableUsers([]);
+      setLoadingAvailability(false);
+    }
+  }, [showEditModal]);
   return (
     <div className="text-black w-full px-2 sm:px-4 lg:px-6 mx-auto mt-4 border-zinc-900">
       <div className="rounded-3xl shadow-md p-3 sm:p-4 lg:p-6 w-full mx-auto">
@@ -878,17 +878,17 @@ useEffect(() => {
               </div>
 
               {/* Assigned Users - Fixed Section */}
-{/* Assigned Users - Enhanced with Availability */}
-<div>
-  <label className="block mb-1 font-medium">Assign to (based on availability)</label>
+              {/* Assigned Users - Enhanced with Availability */}
+              <div>
+                <label className="block mb-1 font-medium">Assign to (based on availability)</label>
 
-  {/* Availability loading state */}
-  {loadingAvailability && (
-    <p className="text-xs my-1 text-blue-500">Loading availability...</p>
-  )}
+                {/* Availability loading state */}
+                {loadingAvailability && (
+                  <p className="text-xs my-1 text-blue-500">Loading availability...</p>
+                )}
 
-  {/* Show availability summary */}
-  {/* {availableUsers.length > 0 && !loadingAvailability && (
+                {/* Show availability summary */}
+                {/* {availableUsers.length > 0 && !loadingAvailability && (
     <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 mb-2">
       <p className="font-semibold">Availability Summary:</p>
       <p className="text-xs">
@@ -899,26 +899,25 @@ useEffect(() => {
   )} */}
 
 
-  {formData.assignedTo.length > 0 && (
+                {formData.assignedTo.length > 0 && (
                   <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
                     <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
                     <ul className="list-none text-sm space-y-1">
                       {formData.assignedTo.map((userId) => {
                         const user = users.find(u => String(u.id) === userId);
                         if (!user) return null;
-                        
+
                         const availability = availableUsers.find(au => au.id === user.id);
-                        
+
                         return (
                           <li key={user.id} className="flex items-center justify-between py-1">
                             <div className="flex items-center gap-2">
                               <span>{user.name}</span>
                               {availability && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                  availability.isBusy 
-                                    ? 'bg-red-100 text-red-700' 
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${availability.isBusy
+                                    ? 'bg-red-100 text-red-700'
                                     : 'bg-green-100 text-green-700'
-                                }`}>
+                                  }`}>
                                   {availability.isBusy ? 'Busy' : 'Available'}
                                 </span>
                               )}
@@ -963,7 +962,7 @@ useEffect(() => {
                   }}
                 >
                   {(availableUsers.length > 0 ? availableUsers : users).map(user => {
-                    const isAvailableUser = (u: any): u is UserAvailability => 
+                    const isAvailableUser = (u: object): u is UserAvailability =>
                       'isBusy' in u && 'nextAvailable' in u;
 
                     // Check if currently selected in form
@@ -973,9 +972,9 @@ useEffect(() => {
                     const originallyAssigned = currentEvent?.assignedTo
                       ?.map(a => String(a.userId))
                       .filter(Boolean) || [];
-                    
+
                     const wasOriginallyAssigned = originallyAssigned.includes(String(user.id));
-                    
+
                     // User is truly busy ONLY if:
                     // 1. They appear as busy in availability data
                     // 2. AND they were NOT originally assigned to this event
@@ -1005,12 +1004,12 @@ useEffect(() => {
                       >
                         {user.name}
                         {isTrulyBusy
-                          ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', { 
-                              timeZone: 'Australia/Brisbane',
-                              hour: '2-digit', 
-                              minute: '2-digit',
-                              hour12: false 
-                            })})`
+                          ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', {
+                            timeZone: 'Australia/Brisbane',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                          })})`
                           : isAvailableUser(user)
                             ? ' (Available)'
                             : ''}
@@ -1019,7 +1018,7 @@ useEffect(() => {
                   })}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Hold Ctrl/Cmd to select multiple users 
+                  Hold Ctrl/Cmd to select multiple users
                 </p>
               </div>
             </div>
