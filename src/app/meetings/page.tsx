@@ -898,107 +898,132 @@ useEffect(() => {
     </div>
   )} */}
 
+
   {formData.assignedTo.length > 0 && (
-    <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
-      <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
-      <ul className="list-none text-sm space-y-1">
-        {formData.assignedTo.map((userId) => {
-          const user = users.find(u => String(u.id) === userId);
-          if (!user) return null;
-          
-          // Check availability status for this user
-          const availability = availableUsers.find(au => au.id === user.id);
-          
-          return (
-            <li key={user.id} className="flex items-center justify-between py-1">
-              <div className="flex items-center gap-2">
-                <span>{user.name}</span>
-                {availability && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    availability.isBusy 
-                      ? 'bg-red-100 text-red-700' 
-                      : 'bg-green-100 text-green-700'
-                  }`}>
-                    {availability.isBusy ? 'Busy' : 'Available'}
-                  </span>
+                  <div className="mt-2 p-2 bg-gray-100 rounded max-h-32 overflow-y-auto mb-2">
+                    <p className="text-sm font-semibold mb-1">Currently Assigned ({formData.assignedTo.length}):</p>
+                    <ul className="list-none text-sm space-y-1">
+                      {formData.assignedTo.map((userId) => {
+                        const user = users.find(u => String(u.id) === userId);
+                        if (!user) return null;
+                        
+                        const availability = availableUsers.find(au => au.id === user.id);
+                        
+                        return (
+                          <li key={user.id} className="flex items-center justify-between py-1">
+                            <div className="flex items-center gap-2">
+                              <span>{user.name}</span>
+                              {availability && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                  availability.isBusy 
+                                    ? 'bg-red-100 text-red-700' 
+                                    : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {availability.isBusy ? 'Busy' : 'Available'}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleRemoveAssignedUser(user.id);
+                              }}
+                              className="text-gray-500 hover:text-red-600 p-1"
+                              title="Remove user"
+                              type="button"
+                            >
+                              <X size={16} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
+
+                {formData.assignedTo.length === 0 && (
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    No users assigned. Select users from the list below.
+                  </div>
+                )}
+
+                {/* ✅ FIXED: Enhanced dropdown with proper availability logic */}
+                <select
+                  multiple
+                  className="w-full border px-3 py-2 rounded h-32"
+                  value={formData.assignedTo}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                    console.log('✅ Selected users:', selected);
+                    setFormData(prev => ({
+                      ...prev,
+                      assignedTo: Array.from(new Set([...prev.assignedTo, ...selected])),
+                    }));
+                  }}
+                >
+                  {(availableUsers.length > 0 ? availableUsers : users).map(user => {
+                    const isAvailableUser = (u: any): u is UserAvailability => 
+                      'isBusy' in u && 'nextAvailable' in u;
+
+                    // Check if currently selected in form
+                    const isCurrentlyAssigned = formData.assignedTo.includes(String(user.id));
+
+                    // ✅ FIX: Get original assigned users from the event
+                    const originallyAssigned = currentEvent?.assignedTo
+                      ?.map(a => String(a.userId))
+                      .filter(Boolean) || [];
+                    
+                    const wasOriginallyAssigned = originallyAssigned.includes(String(user.id));
+                    
+                    // User is truly busy ONLY if:
+                    // 1. They appear as busy in availability data
+                    // 2. AND they were NOT originally assigned to this event
+                    // 3. AND they are NOT currently selected in the form
+                    const isTrulyBusy = isAvailableUser(user) && user.isBusy && !wasOriginallyAssigned;
+
+                    // Debug logging
+                    if (isAvailableUser(user)) {
+                      console.log(`👤 ${user.name}:`, {
+                        isBusy: user.isBusy,
+                        wasOriginallyAssigned,
+                        isCurrentlyAssigned,
+                        isTrulyBusy
+                      });
+                    }
+
+                    return (
+                      <option
+                        key={user.id}
+                        value={String(user.id)}
+                        disabled={isTrulyBusy}
+                        className={`
+                          ${isCurrentlyAssigned ? "bg-blue-100" : ""}
+                          ${isTrulyBusy ? "text-red-500 bg-red-50" : ""}
+                          ${!isTrulyBusy && !isCurrentlyAssigned && isAvailableUser(user) ? "text-green-600" : ""}
+                        `}
+                      >
+                        {user.name}
+                        {isTrulyBusy
+                          ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', { 
+                              timeZone: 'Australia/Brisbane',
+                              hour: '2-digit', 
+                              minute: '2-digit',
+                              hour12: false 
+                            })})`
+                          : isAvailableUser(user)
+                            ? ' (Available)'
+                            : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Hold Ctrl/Cmd to select multiple users 
+                </p>
               </div>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRemoveAssignedUser(user.id);
-                }}
-                className="text-gray-500 hover:text-red-600 p-1"
-                title="Remove user"
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  )}
-
-  {formData.assignedTo.length === 0 && (
-    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-      No users assigned. Select users from the list below.
-    </div>
-  )}
-
-  {/* Enhanced dropdown with availability information */}
-  <select
-    multiple
-    className="w-full border px-3 py-2 rounded h-32"
-    value={formData.assignedTo}
-    onChange={(e) => {
-      const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-      setFormData(prev => ({
-        ...prev,
-        assignedTo: selected,
-      }));
-      console.log('Selected from dropdown:', selected);
-    }}
-  >
-    {(availableUsers.length > 0 ? availableUsers : users).map(user => {
-      const isAvailableUser = (u: any): u is UserAvailability => 
-        'isBusy' in u && 'nextAvailable' in u;
-
-      return (
-        <option
-          key={user.id}
-          value={String(user.id)}
-          disabled={isAvailableUser(user) && user.isBusy}
-          className={`
-            ${formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
-            ${isAvailableUser(user) && user.isBusy ? "text-red-500 bg-red-50" : ""}
-            ${isAvailableUser(user) && !user.isBusy ? "text-green-600" : ""}
-          `}
-        >
-          {user.name}
-          {isAvailableUser(user) && user.isBusy 
-            ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', { 
-                timeZone: 'Australia/Brisbane',
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-              })})`
-            : isAvailableUser(user) && !user.isBusy 
-              ? ' (Available)'
-              : ''}
-        </option>
-      );
-    })}
-  </select>
-  <p className="text-xs text-gray-500 mt-1">
-    Hold Ctrl/Cmd to select multiple users 
-  </p>
-</div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end mt-6 gap-2">
               <button
                 className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
@@ -1017,6 +1042,7 @@ useEffect(() => {
           </Dialog.Panel>
         </Dialog>
       )}
+
 
       {showSaveModal && currentEvent && (
         <Dialog

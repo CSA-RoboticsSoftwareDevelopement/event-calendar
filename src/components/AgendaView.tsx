@@ -499,7 +499,7 @@ return (
                   No users assigned. Select users from the list below.
                </div>
                )}
-               {/* Enhanced dropdown with availability information */}
+{/* Enhanced dropdown with availability information */}
                <select
                   multiple
                   className="w-full border px-3 py-2 rounded h-32"
@@ -508,7 +508,7 @@ return (
                const selected = Array.from(e.target.selectedOptions).map(o => o.value);
                setFormData(prev => ({
                ...prev,
-               assignedTo: selected,
+               assignedTo: Array.from(new Set([...prev.assignedTo, ...selected])),
                }));
                console.log('Selected from dropdown:', selected);
                }}
@@ -516,26 +516,41 @@ return (
                {(availableUsers.length > 0 ? availableUsers : users).map(user => {
                const isAvailableUser = (u: any): u is UserAvailability => 
                'isBusy' in u && 'nextAvailable' in u;
+               
+               // Check if user is currently assigned in the form
+               const isCurrentlyAssigned = formData.assignedTo.includes(String(user.id));
+               
+               // Get original assigned users from the event
+               const originallyAssigned = event.assignedTo
+                  ?.map(a => String(a.user?.id ?? a.userId))
+                  .filter(Boolean) || [];
+               
+               const wasOriginallyAssigned = originallyAssigned.includes(String(user.id));
+               
+               // User is truly busy if: they're busy AND (not originally assigned OR currently assigned)
+               // This means: if they were originally assigned but now deselected, they're available
+               const isTrulyBusy = isAvailableUser(user) && user.isBusy && !wasOriginallyAssigned;
+               
                return (
                <option
                key={user.id}
                value={String(user.id)}
-               disabled={isAvailableUser(user) && user.isBusy}
+               disabled={isTrulyBusy}
                className={`
-               ${formData.assignedTo.includes(String(user.id)) ? "bg-blue-100" : ""}
-               ${isAvailableUser(user) && user.isBusy ? "text-red-500 bg-red-50" : ""}
-               ${isAvailableUser(user) && !user.isBusy ? "text-green-600" : ""}
+               ${isCurrentlyAssigned ? "bg-blue-100" : ""}
+               ${isTrulyBusy ? "text-red-500 bg-red-50" : ""}
+               ${!isTrulyBusy && !isCurrentlyAssigned && isAvailableUser(user) ? "text-green-600" : ""}
                `}
                >
                {user.name}
-               {isAvailableUser(user) && user.isBusy 
+               {isTrulyBusy
                ? ` (Busy - Free at ${new Date(user.nextAvailable).toLocaleTimeString('en-AU', { 
                timeZone: 'Australia/Brisbane',
                hour: '2-digit', 
                minute: '2-digit',
                hour12: false 
                })})`
-               : isAvailableUser(user) && !user.isBusy 
+               : isAvailableUser(user)
                ? ' (Available)'
                : ''}
                </option>

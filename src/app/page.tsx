@@ -542,12 +542,12 @@ export default function App() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time (Brisbane)</label>
+                <label htmlFor="event-start" className="block text-sm font-medium mb-1">Start Time </label>
                 <input id="event-start" type="datetime-local" className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm"
                   value={start} onChange={e => setStart(e.target.value)} />
               </div>
               <div>
-                <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time (Brisbane)</label>
+                <label htmlFor="event-end" className="block text-sm font-medium mb-1">End Time</label>
                 <input id="event-end" type="datetime-local" className="w-full mb-2 p-2 rounded-md border border-slate-400 text-sm"
                   value={end} onChange={e => setEnd(e.target.value)} />
               </div>
